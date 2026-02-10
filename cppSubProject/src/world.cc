@@ -18,8 +18,46 @@ static bool isVisible(const BoundingBox& box, const Camera& cam, float screenWid
     return !(maxX < camLeft || minX > camRight || maxZ < camTop || minZ > camBottom);
 }
 
+void World::addEntity(std::unique_ptr<Entity> entity) {
+    entities.push_back(std::move(entity));
+}
+
 void addEntity(World & world, std::unique_ptr<Entity> entity) {
-    world.entities.push_back(std::move(entity));
+    world.entitiesToAdd.push_back(std::move(entity));
+}
+
+bool World::removeEntity(Entity * entity) {
+
+    // Check if entity is in the list
+    auto it = std::find_if(entities.begin(), entities.end(),
+            [entity](const std::unique_ptr<Entity>& e) {
+                return e.get() == entity;
+            });
+    if (it == entities.end()) return false;
+
+    entitiesToRemove.push_back(entity);
+    return true;
+}
+
+void World::applyPendingChanges() {
+
+    // Add entities
+    for (auto & entity : entitiesToAdd) {
+        entities.push_back(std::move(entity));
+    }
+    entitiesToAdd.clear();
+
+    // Remove entities
+    for (auto & entity : entitiesToRemove) {
+        entities.erase(
+            std::remove_if(entities.begin(), entities.end(),
+                [entity](const std::unique_ptr<Entity>& e) {
+                    return e.get() == entity;
+                }),
+            entities.end()
+        );
+    }
+    entitiesToRemove.clear();
 }
 
 Light * addLight(World & world, Light && light) {
@@ -34,11 +72,11 @@ void clearLights(World & world) {
 void clearWorld(World & world) {
     clearEntities(world);
     clearLights(world);
+    world.entitiesToAdd.clear();
+    world.entitiesToRemove.clear();
 }
 
 bool removeLight(World &world, Light *light) {
-    if (light == nullptr) return false;
-
     auto &vec = world.lights;
 
     // Find the pointer in the vector
@@ -54,6 +92,8 @@ bool removeLight(World &world, Light *light) {
 }
 
 void updateWorld(World & world, const float delta) {
+    world.applyPendingChanges();
+
     for (auto & entity : world.entities) {
         // Some entities might add / romove other entities 
         // in the world directly
@@ -64,7 +104,6 @@ void updateWorld(World & world, const float delta) {
 }
 
 void renderWorld(World & world, const Camera & camera) {
-
     sendLightsToShader(toonShader, world.lights);
 
     for (auto & entity : world.entities) {
@@ -77,26 +116,13 @@ void renderWorld(World & world, const Camera & camera) {
 }
 
 bool removeEntity(World &world, Entity* entity) {
-    auto &vec = world.entities;
-
-    // Count before removal
-    size_t before = vec.size();
-
-    // Remove the entity whose pointer matches
-    vec.erase(
-        std::remove_if(vec.begin(), vec.end(),
-            [entity](const std::unique_ptr<Entity>& e) {
-                return e.get() == entity;
-            }),
-        vec.end()
-    );
-
-    // Return true if something was removed
-    return vec.size() < before;
+    if (entity == nullptr) return false;
+    world.entitiesToRemove.push_back(entity);
+    return true;
 }
 
 void clearEntities(World & world) {
-    world.entities.clear();     // destroys all unique_ptrs, deleting entities
+    world.entities.clear();
 }
 
 /* For testing purposes */
@@ -107,6 +133,5 @@ void renderBoundingBoxes(World & world) {
 }
 
 World::~World() {
-    TraceLog(LOG_INFO, "World destroyed");
     clearWorld(*this);
 }

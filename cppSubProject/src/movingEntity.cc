@@ -10,8 +10,8 @@
 MovingEntity::MovingEntity(Model * model, Texture2D * texture, float scale) :
     scale(scale)
 {
-    position = Vector3{ 0.0f, 0.0f, 0.0f };
-    direction = Vector3{ 0.0f, 0.0f, 0.0f };
+    position = Vector3 { 0.0f, 0.0f, 0.0f };
+    direction = Vector3 { 0.0f, 0.0f, 0.0f };
     velocity = 10.0f;
 
     this->model = model;

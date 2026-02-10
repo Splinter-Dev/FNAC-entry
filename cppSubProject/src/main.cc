@@ -4,6 +4,7 @@
 #include "shader.hh"
 #include "world.hh"
 #include "rlgl.h"
+#include "scene.hh"
 
 const float STEP = 1.0f / 500.0f;  // fixed timestep: 500 updates per second
                                    // independent of the framerate
@@ -24,6 +25,7 @@ int main(void)
 {
     // Antialiasing
     SetConfigFlags(FLAG_MSAA_4X_HINT);
+
     // Vsync
     SetConfigFlags(FLAG_VSYNC_HINT);
 
@@ -43,21 +45,24 @@ int main(void)
     // Initialize the toon shader
     initShaders();
 
-    Camera3D camera;
-    camera.projection = CAMERA_ORTHOGRAPHIC;
-    camera.position = { 0.0f, 20.0f, 20.0f }; // farther back along diagonal
-    camera.target   = { 0.0f, 0.0f, 0.0f };
-    camera.up       = { 0.0f, 1.0f, 0.0f };   // keep Y as "up" on screen
-    camera.fovy     = 25.0f; // can be slightly smaller now
+    Scene scene;
+
+    scene.Init(); // Logical resolution is 1920x1080
+
+    scene.camera.projection = CAMERA_ORTHOGRAPHIC;
+    scene.camera.position = { 0.0f, 20.0f, 20.0f }; // farther back along diagonal
+    scene.camera.target   = { 0.0f, 0.0f, 0.0f };
+    scene.camera.up       = { 0.0f, 1.0f, 0.0f };   // keep Y as "up" on screen
+    scene.camera.fovy     = 25.0f; // can be slightly smaller now
 
     Model playerModel = LoadModel("resources/guy.iqm");
     Texture2D playerTexture = LoadTexture("resources/guytex.png");
 
-    Player * player = std::make_unique<Player>(
+    Player * player = new Player(
                 &playerModel,
                 &playerTexture,
-                0.5f
-            ).release();
+                0.5f);
+
     addEntity(mainWorld, std::unique_ptr<Entity>(player));
 
 
@@ -111,11 +116,14 @@ int main(void)
         }
 
         // Update the shader with the camera view vector (points towards { 0.0f, 0.0f, 0.0f })
-        float cameraPos[3] = { camera.position.x, camera.position.y, camera.position.z };
+        float cameraPos[3] = { 
+            scene.camera.position.x, 
+            scene.camera.position.y, 
+            scene.camera.position.z };
         SetShaderValue(toonShader, toonShader.locs[SHADER_LOC_VECTOR_VIEW], cameraPos, SHADER_UNIFORM_VEC3);
 
-        camera.target = player->getPosition();
-        camera.position =
+        scene.camera.target = player->getPosition();
+        scene.camera.position =
             (Vector3){
                 player->getPosition().x,
                 player->getPosition().y + 20.0f,
@@ -126,13 +134,17 @@ int main(void)
 
             ClearBackground(DARKGRAY);
 
-            BeginMode3D(camera);
-                BeginShaderMode(toonShader);
-                    DrawPlane(Vector3{ 0.0f, 0.0f, 0.0f }, Vector2{ 80.0f, 80.0f }, DARKPURPLE);
-                EndShaderMode();
-                renderWorld(mainWorld, camera);
-                // renderBoundingBoxes(mainWorld);
-            EndMode3D();
+            /* Everything inside this lambda will be rendered to a texture,
+             * then loaded to the physical screen */
+            scene.RenderToTexture([&]() {
+                    BeginShaderMode(toonShader);
+                        DrawPlane(Vector3{ 0.0f, 0.0f, 0.0f }, Vector2{ 80.0f, 80.0f }, DARKPURPLE);
+                    EndShaderMode();
+                    renderWorld(mainWorld, scene.camera);
+                    // renderBoundingBoxes(mainWorld);
+                });
+
+            scene.DrawFullscreen();
 
             DrawText(HELP, 10, 10, 20, 
                     (Color){ 255, 255, 255, 150 });
