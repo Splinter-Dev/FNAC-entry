@@ -14,8 +14,21 @@ struct World {
 
     std::vector<std::unique_ptr<Entity>> entities;
     std::vector<Light> lights;
+
+    /* Apply pending adds / removals to the world */
+    void applyPendingChanges();
+    std::vector<std::unique_ptr<Entity>> entitiesToAdd;
+    std::vector<Entity *> entitiesToRemove;
+
     /* Entities have to know if they are in shadow mode or not */
     bool shadowMode = false;
+
+    private:
+
+    /* Entities are only added in the end of the update loop,
+     * these add / romove the entities from entities / lights */
+    void addEntity(std::unique_ptr<Entity> entity);
+    bool removeEntity(Entity * entity);
 };
 
 /* Abstract base class for entities */
