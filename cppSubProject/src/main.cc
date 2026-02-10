@@ -1,12 +1,20 @@
 #include "raylib.h"
 #include "raymath.h"
-#include "bird.hh"
 #include "player.hh"
+#include "shader.hh"
+#include "world.hh"
+#include "rlgl.h"
 
 const float STEP = 1.0f / 500.0f;  // fixed timestep: 500 updates per second
                                    // independent of the framerate
-                                   //
-World mainWorld = newWorld();
+
+World mainWorld;
+
+#define HELP "Press SPACE to toggle shadow mode\n" \
+             "Press W/S to move forward/backward\n" \
+             "Press A/D to move left/right\n" \
+             "Press SHIFT to increase velocity\n" \
+             "Press ESC to exit"
 
 void updateGame(World & world, float delta) {
     updateWorld(world, delta);
@@ -14,41 +22,62 @@ void updateGame(World & world, float delta) {
 
 int main(void)
 {
-    mainWorld.backgroundColor = DARKGRAY;
-
     // Antialiasing
     SetConfigFlags(FLAG_MSAA_4X_HINT);
-
     // Vsync
+    SetConfigFlags(FLAG_VSYNC_HINT);
+
     InitWindow(1920, 1080, "Top-Down Cube Example");
+
+    // Audio test
+    InitAudioDevice();
+    Music m = LoadMusicStream("resources/menuideia.wav");
+
+    SetMasterVolume(0.5f);
+    SetMusicVolume(m, 0.5f);
+    SetMusicPitch(m, 0.9f);
 
     // Exit key
     SetExitKey(KEY_ESCAPE);
 
-    // Set up a camera directly above the origin, looking down
-    Camera3D camera = { 0 };
-    camera.position = (Vector3){ 0.0f, 20.0f, 10.0f };   // Above the scene
-    camera.target   = (Vector3){ 0.0f, 0.0f, 0.0f };    // Looking at the origin
-    camera.up       = (Vector3){ 0.0f, 0.0f, -1.0f };   // Rotate so "up" is screen up
-    camera.fovy     = 45.0f;
-    camera.projection = CAMERA_PERSPECTIVE;
+    // Initialize the toon shader
+    initShaders();
 
-    Player * player = std::make_unique<Player>().release();
-    player->setVelocity(10.0f);
+    Camera3D camera;
+    camera.projection = CAMERA_ORTHOGRAPHIC;
+    camera.position = { 0.0f, 20.0f, 20.0f }; // farther back along diagonal
+    camera.target   = { 0.0f, 0.0f, 0.0f };
+    camera.up       = { 0.0f, 1.0f, 0.0f };   // keep Y as "up" on screen
+    camera.fovy     = 25.0f; // can be slightly smaller now
 
-    Bird * bird = std::make_unique<Bird>(
-            "resources/bird.obj",
-            0.2f,
-            10.0f,
-            -1.0f
+    Model playerModel = LoadModel("resources/guy.iqm");
+    Texture2D playerTexture = LoadTexture("resources/guytex.png");
+
+    Player * player = std::make_unique<Player>(
+                &playerModel,
+                &playerTexture,
+                0.5f
             ).release();
-
     addEntity(mainWorld, std::unique_ptr<Entity>(player));
-    addEntity(mainWorld, std::unique_ptr<Entity>(bird));
+
+
+    player->model->materials[0].shader = toonShader;
+    player->setPosition((Vector3){ 0.0f, 0.1f, 0.0f });
+
+    Light light = pointLight((Vector3){ 0.0f, 10.0f, 0.0f }, RED, 1.0f, 10.0f);
+    Light light2 = pointLight((Vector3){ 10.0f, 10.0f, 20.0f }, BLUE, 1.0f, 8.0f);
+
+    addLight(mainWorld, std::move(light));
+    addLight(mainWorld, std::move(light2));
 
     float accumulator = 0.0f;
+
+    PlayMusicStream(m);
+
     while (!WindowShouldClose())
     {
+        UpdateMusicStream(m);
+
         float dt = GetFrameTime();
 
         accumulator += dt;
@@ -59,35 +88,16 @@ int main(void)
             accumulator -= STEP;
         }
 
-        player->setDirection(Vector3Zero());
+        Vector3 dir = Vector3Zero();
 
-        if (IsKeyDown(KEY_A)) {
-            player->setDirectionX(-1.0f);
-        } 
-        if (IsKeyDown(KEY_D)) {
-            player->setDirectionX(1.0f);
-        } 
-        if (IsKeyDown(KEY_W)) {
-            player->setDirectionZ(-1.0f);
-        } 
-        if (IsKeyDown(KEY_S)) {
-            player->setDirectionZ(1.0f);
-        }
-        player->normalizeDirection();
+        if (IsKeyDown(KEY_A)) dir.x = -1.0f;
+        if (IsKeyDown(KEY_D)) dir.x = 1.0f;
+        if (IsKeyDown(KEY_W)) dir.z = -1.0f;
+        if (IsKeyDown(KEY_S)) dir.z = 1.0f;
 
-        // Move camera
-        if (IsKeyDown(KEY_LEFT)) {
-            camera.position.x -= 0.2f;
-        } else if (IsKeyDown(KEY_RIGHT)) {
-            camera.position.x += 0.2f;
-        }
-        if (IsKeyDown(KEY_UP)) {
-            camera.position.y += 0.2f;
-        } else if (IsKeyDown(KEY_DOWN)) {
-            if (camera.position.y > 0.2f) {
-                camera.position.y -= 0.2f;
-            }
-        }
+        dir = Vector3Normalize(dir);
+
+        player->setDirection(dir);
 
         // Enable shadow mode
         if (IsKeyPressed(KEY_SPACE)) {
@@ -100,24 +110,45 @@ int main(void)
             player->setVelocity(10.0f);
         }
 
+        // Update the shader with the camera view vector (points towards { 0.0f, 0.0f, 0.0f })
+        float cameraPos[3] = { camera.position.x, camera.position.y, camera.position.z };
+        SetShaderValue(toonShader, toonShader.locs[SHADER_LOC_VECTOR_VIEW], cameraPos, SHADER_UNIFORM_VEC3);
+
+        camera.target = player->getPosition();
+        camera.position =
+            (Vector3){
+                player->getPosition().x,
+                player->getPosition().y + 20.0f,
+                player->getPosition().z + 20.0f
+            };
+
         BeginDrawing();
 
-        BeginMode3D(camera);
+            ClearBackground(DARKGRAY);
 
-        renderWorld(mainWorld, camera);
-        // renderBoundingBoxes(mainWorld);
+            BeginMode3D(camera);
+                BeginShaderMode(toonShader);
+                    DrawPlane(Vector3{ 0.0f, 0.0f, 0.0f }, Vector2{ 80.0f, 80.0f }, DARKPURPLE);
+                EndShaderMode();
+                renderWorld(mainWorld, camera);
+                // renderBoundingBoxes(mainWorld);
+            EndMode3D();
 
-        DrawGrid(100, 1.0f);
+            DrawText(HELP, 10, 10, 20, 
+                    (Color){ 255, 255, 255, 150 });
 
-        EndMode3D();
-        DrawFPS(10, 10);
+            DrawFPS(1830, 10);
         EndDrawing();
     }
 
-    clearEntities(mainWorld);
+    UnloadShader(toonShader);
+    UnloadModel(playerModel);
+    UnloadTexture(playerTexture);
+
+    StopMusicStream(m);
+    UnloadMusicStream(m);
 
     CloseWindow();
 
     return 0;
 }
-

@@ -2,164 +2,111 @@
 #include <raymath.h>
 #include "player.hh"
 #include "rlgl.h"
-#include "raymath.h"
 #include "raylib.h"
+#include "rlgl.h"
+#include "movingEntity.hh"
+#include "world.hh"
+#include <memory>
 
-Player::Player() :
-    scale(0.1f)
-{
-
-    position = Vector3{ 0.0f, 0.0f, 0.0f };
-    direction = Vector3{ 0.0f, 0.0f, 0.0f };
-    shadowPosition = Vector3{ 0.0f, 0.0f, 0.0f };
-    velocity = 10.0f;
-    shadowRadius = 10.0f;
-    shadowModeActive = false;
-
-    model = LoadModel("resources/person.obj");
-
-    /* Calculate Bounding Box for the model */
-    bb = GetModelBoundingBox(model);
-
-    bb.min.x *= scale;
-    bb.min.y *= scale;
-    bb.min.z *= scale;
-
-    bb.max.x *= scale;
-    bb.max.y *= scale;
-    bb.max.z *= scale;
-}
+Player::Player(Model * model, Texture2D * texture, float scale) :
+    MovingEntity(model, texture, scale)
+{}
 
 void Player::update(World & world, float delta) {
-
     world.shadowMode = shadowModeActive;
 
     if (shadowModeActive) {
-        Vector3 oldPosition = shadowPosition;
-
-        shadowPosition.x += direction.x * velocity * delta;
-        shadowPosition.y += direction.y * velocity * delta;
-        shadowPosition.z += direction.z * velocity * delta;
-
-        if (!CheckCollisionPointCircle(
-                    (Vector2) { shadowPosition.x, shadowPosition.z },
-                    (Vector2) { position.x, position.z },
-                    shadowRadius)) {
-            shadowPosition = oldPosition;
+        if (shadow == nullptr) {
+            // Insert shadow entity into the world
+            shadow = std::make_unique<PlayerShadow>(
+                    model, texture, getScale(), this).release();
+            shadow->setPosition(getPosition());
+            shadow->setVelocity(getVelocity());
+            addEntity(world, std::unique_ptr<Entity>(shadow));
         }
-                    
     } else {
-        position.x += direction.x * velocity * delta;
-        position.y += direction.y * velocity * delta;
-        position.z += direction.z * velocity * delta;
+        if (shadow != nullptr) {
+            // Remove shadow entity from the world
+            if (removeEntity(world, shadow)) {
+                shadow = nullptr;
+            } else {
+                TraceLog(LOG_ERROR, "Failed to remove shadow entity");
+            }
+        }
+        MovingEntity::update(world, delta);
     }
 }
 
-void Player::render() {
-
-    Vector3 dir = direction;
-    Vector3 rotationAxis = Vector3{ 0.0f, 1.0f, 0.0f };
-    float rotationAngle = 0.0f; // default
-
-    if (Vector3Length(dir) > 0.0001f) {
-        // atan2 returns radians, convert to degrees
-        rotationAngle = atan2f(dir.x, dir.z) * (180.0f / PI);
-    }
-
-    if (shadowModeActive) {
-        // Draw the original model with rotation 0.0f
-        DrawModelEx(model, position, (Vector3){0, 1, 0}, 0.0f,
-                (Vector3){scale, scale, scale}, RED);
-
-        DrawModelEx(model, shadowPosition, rotationAxis, rotationAngle,
-                (Vector3){scale, scale, scale}, BLACK);
-
-        // Draw a circle on the ground indicating the shadow radius
-        DrawCircle3D(position, shadowRadius, (Vector3){1, 0, 0}, 90.0f, RED);
-    } else {
-        DrawModelEx(model, position, (Vector3){0, 1, 0}, rotationAngle,
-                (Vector3){scale, scale, scale}, RED);
-    }
-}
-
-BoundingBox Player::getBoundingBox() const {
-    BoundingBox b = bb;
-    Vector3 position = shadowModeActive ? shadowPosition : this->position;
-    b.min.x += position.x;
-    b.min.y += position.y;
-    b.min.z += position.z;
-    b.max.x += position.x;
-    b.max.y += position.y;
-    b.max.z += position.z;
-    return b;
-}
-
-void Player::setPosition(Vector3 position) {
-    this->position = position;
-}
-
-void Player::addPosition(Vector3 position) {
-    if (shadowModeActive) {
-        shadowPosition.x += position.x;
-        shadowPosition.y += position.y;
-        shadowPosition.z += position.z;
-    } else {
-        this->position.x += position.x;
-        this->position.y += position.y;
-        this->position.z += position.z;
+void Player::render() const {
+    MovingEntity::render();
+    // Render the circle if in shadow mode
+    if (shadowModeActive && shadow != nullptr) {
+        DrawCircle3D(getPosition(), getRadius(), (Vector3){1, 0, 0}, 90.0f, RED);
     }
 }
 
 void Player::setDirection(Vector3 direction) {
-    this->direction = direction;
-}
-
-void Player::addDirection(Vector3 direction) {
-    if (shadowModeActive) {
-        shadowPosition.x += direction.x;
-        shadowPosition.y += direction.y;
-        shadowPosition.z += direction.z;
+    // If shadow mode is active, change the shadow entity's direction
+    if (shadowModeActive && shadow != nullptr) {
+        shadow->setDirection(direction);
     } else {
-        this->direction.x += direction.x;
-        this->direction.y += direction.y;
-        this->direction.z += direction.z;
+        MovingEntity::setDirection(direction);
     }
 }
 
 void Player::toggleShadowMode() {
-    if (shadowModeActive) {
-        shadowModeActive = false;
-        shadowPosition = position;
-    } else {
-        shadowModeActive = true;
-        shadowPosition = position;
+    setShadowMode(!shadowModeActive);
+}
+
+void Player::setShadowMode(bool shadowMode) {
+    if (shadowModeActive != shadowMode) {
+        shadowModeActive = shadowMode;
     }
 }
 
 void Player::setVelocity(float velocity) {
-    this->velocity = velocity;
+    if (shadowModeActive && shadow != nullptr) {
+        shadow->setVelocity(velocity);
+    } else {
+        MovingEntity::setVelocity(velocity);
+    }
 }
 
-Vector3 Player::getPosition() {
-    return position;
-}
-
-Vector3 Player::getDirection() {
-    return direction;
-}
-
-float Player::getVelocity() {
-    return velocity;
-}
-
-bool Player::shadowMode() {
+bool Player::shadowMode() const {
     return shadowModeActive;
 }
 
-void Player::normalizeDirection() {
-    direction = Vector3Normalize(direction);
+float Player::getRadius() const {
+    return shadowRadius;
 }
 
-Player::~Player() {
-    UnloadModel(model);
+/* Shadow entity */
+
+PlayerShadow::PlayerShadow(Model * model, Texture2D * texture, float scale, Player * player) : 
+    player(player),
+    MovingEntity(model, texture, scale) {}
+
+void PlayerShadow::update(World & world, float delta) {
+    if (world.shadowMode && player != nullptr) {
+
+        Vector3 pos = getPosition();
+        float rad = player->getRadius();
+
+        MovingEntity::update(world, delta);
+
+        // If the shadow is outside the player's radius, roll back
+        if (!CheckCollisionPointCircle(
+                    (Vector2) { 
+                    getPosition().x, 
+                    getPosition().z 
+                    },
+                    (Vector2) { 
+                    player->getPosition().x,
+                    player->getPosition().z
+                    },
+                    rad)) {
+            // Rollback
+            setPosition(pos);
+        }
+    }
 }

@@ -1,11 +1,11 @@
 WINDOWS ?= 0
 
-CFLAGS ?= -std=c++17 -O0 -Wall -Wextra -pedantic
+CFLAGS ?= -std=c++17 -O0 -Wall -Wextra -Wno-unused-parameter
 
 ifeq ($(WINDOWS),1)
     CC = x86_64-w64-mingw32-g++
     TARGET = ./program.exe
-    CFLAGS += -DPLATFORM_WINDOWS -DPLATFORM_DESKTOP
+    CFLAGS += -DPLATFORM_WINDOWS -DPLATFORM_DESKTOP -Wno-missing-field-initializers
     INCDIR = ./inc ./windows/inc
     LIBS = ./windows/lib/libraylib.a -lopengl32 -lgdi32 -lwinmm -lshell32 -luser32 -lkernel32
     LDFLAGS = -static -static-libgcc -static-libstdc++ -Wl,-subsystem,console

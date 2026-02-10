@@ -1,49 +1,41 @@
 #pragma once
 
 #include <raylib.h>
-#include "world.hh"
+#include "movingEntity.hh"
 
-class Player : public Entity {
+class PlayerShadow;
+
+class Player : public MovingEntity {
 public:
-    Player();
+    Player(Model * model, Texture2D * texture, float scale = 0.5f);
 
     void update(World & world, float delta) override;
-    void render() override;
-    BoundingBox getBoundingBox() const override;
-    ~Player() override;
-
-    void setPosition(Vector3 position);
-    void addPosition(Vector3 position);
-    void setDirection(Vector3 direction);
-    void addDirection(Vector3 direction);
-    void setVelocity(float velocity);
-
-    void setDirectionX(float x) { direction.x = x; }
-    void setDirectionY(float y) { direction.y = y; }
-    void setDirectionZ(float z) { direction.z = z; }
-    void normalizeDirection();
+    void render() const override;
 
     void setShadowMode(bool shadowMode);
     void toggleShadowMode();
+    bool shadowMode() const;
+    float getRadius() const;
 
-    Vector3 getPosition();
-    Vector3 getDirection();
-    float getVelocity();
-    bool shadowMode();
-
+    void setVelocity(float velocity);
+    void setDirection(Vector3 direction);
 
 private:
-
-    Vector3 position;
-    Vector3 direction;
-    float velocity;
-
     // Shadow
-    bool shadowModeActive;
-    float shadowRadius;
-    Vector3 shadowPosition;
+    PlayerShadow * shadow = nullptr;
+    bool shadowModeActive = false;
+    float shadowRadius = 10.0f;
+};
 
-    Model model;
-    BoundingBox bb;
-    const float scale;
+class PlayerShadow : public MovingEntity {
+public:
+    PlayerShadow(Model * model, 
+            Texture2D * texture, 
+            float scale = 0.5f,
+            Player * player = nullptr
+            );
+
+    void update(World & world, float delta) override;
+private:
+    Player * player;
 };
