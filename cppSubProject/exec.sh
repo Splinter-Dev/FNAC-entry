@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 export MANGOHUD_CONFIG="round_corners=10;position=bottom-right;proc_vram;procmem;swap;gpu_voltage" 
-program="./program"
+program="./bin/program"
 
 if [ -x /usr/bin/mangohud ]; then
     mangohud $program

@@ -1,0 +1,5 @@
+cppSubProject/obj/
+cppSubProject/windows/
+cppSubProject/.cache/
+cppSubProject/bin/
+cppSubProject/compile_commands.json
