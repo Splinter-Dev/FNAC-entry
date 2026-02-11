@@ -1,10 +1,10 @@
 #include "raylib.h"
 #include "raymath.h"
 #include "player.hh"
-#include "shader.hh"
 #include "world.hh"
 #include "rlgl.h"
 #include "scene.hh"
+#include "shaderManager.hh"
 
 const float STEP = 1.0f / 500.0f;  // fixed timestep: 500 updates per second
                                    // independent of the framerate
@@ -42,9 +42,6 @@ int main(void)
     // Exit key
     SetExitKey(KEY_ESCAPE);
 
-    // Initialize the toon shader
-    initShaders();
-
     Scene scene;
 
     scene.Init(); // Logical resolution is 1920x1080
@@ -65,12 +62,11 @@ int main(void)
 
     addEntity(mainWorld, std::unique_ptr<Entity>(player));
 
-
-    player->model->materials[0].shader = toonShader;
+    player->model->materials[0].shader = SM.getToon();
     player->setPosition((Vector3){ 0.0f, 0.1f, 0.0f });
 
     Light light = pointLight((Vector3){ 0.0f, 10.0f, 0.0f }, RED, 1.0f, 10.0f);
-    Light light2 = pointLight((Vector3){ 10.0f, 10.0f, 20.0f }, BLUE, 1.0f, 8.0f);
+    Light light2 = pointLight((Vector3){ 10.0f, 10.0f, 20.0f }, BLUE, 1.0f, 10.0f);
 
     addLight(mainWorld, std::move(light));
     addLight(mainWorld, std::move(light2));
@@ -120,7 +116,9 @@ int main(void)
             scene.camera.position.x, 
             scene.camera.position.y, 
             scene.camera.position.z };
-        SetShaderValue(toonShader, toonShader.locs[SHADER_LOC_VECTOR_VIEW], cameraPos, SHADER_UNIFORM_VEC3);
+        SetShaderValue(
+                SM.getToon(),
+                SM.getToon().locs[SHADER_LOC_VECTOR_VIEW], cameraPos, SHADER_UNIFORM_VEC3);
 
         scene.camera.target = player->getPosition();
         scene.camera.position =
@@ -137,7 +135,7 @@ int main(void)
             /* Everything inside this lambda will be rendered to a texture,
              * then loaded to the physical screen */
             scene.RenderToTexture([&]() {
-                    BeginShaderMode(toonShader);
+                    BeginShaderMode(SM.getToon());
                         DrawPlane(Vector3{ 0.0f, 0.0f, 0.0f }, Vector2{ 80.0f, 80.0f }, DARKPURPLE);
                     EndShaderMode();
                     renderWorld(mainWorld, scene.camera);
@@ -153,12 +151,13 @@ int main(void)
         EndDrawing();
     }
 
-    UnloadShader(toonShader);
     UnloadModel(playerModel);
     UnloadTexture(playerTexture);
 
     StopMusicStream(m);
     UnloadMusicStream(m);
+
+    SM.unloadAll();
 
     CloseWindow();
 

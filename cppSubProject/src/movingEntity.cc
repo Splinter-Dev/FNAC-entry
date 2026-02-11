@@ -77,6 +77,7 @@ void MovingEntity::setDirection(Vector3 direction) {
         lastDirection = direction;
     }
     this->direction = direction;
+    normalizeDirection();
 }
 
 void MovingEntity::addDirection(Vector3 direction) {

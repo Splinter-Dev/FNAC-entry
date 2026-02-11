@@ -1,5 +1,5 @@
 #include "world.hh"
-#include "shader.hh"
+#include "shaderManager.hh"
 #include <algorithm>
 #include <vector>
 
@@ -19,11 +19,11 @@ static bool isVisible(const BoundingBox& box, const Camera& cam, float screenWid
 }
 
 void World::addEntity(std::unique_ptr<Entity> entity) {
-    entities.push_back(std::move(entity));
+    entities.emplace_back(std::move(entity));
 }
 
 void addEntity(World & world, std::unique_ptr<Entity> entity) {
-    world.entitiesToAdd.push_back(std::move(entity));
+    world.entitiesToAdd.emplace_back(std::move(entity));
 }
 
 bool World::removeEntity(Entity * entity) {
@@ -35,15 +35,14 @@ bool World::removeEntity(Entity * entity) {
             });
     if (it == entities.end()) return false;
 
-    entitiesToRemove.push_back(entity);
+    entitiesToRemove.emplace_back(entity);
     return true;
 }
 
 void World::applyPendingChanges() {
-
     // Add entities
     for (auto & entity : entitiesToAdd) {
-        entities.push_back(std::move(entity));
+        entities.emplace_back(std::move(entity));
     }
     entitiesToAdd.clear();
 
@@ -61,7 +60,7 @@ void World::applyPendingChanges() {
 }
 
 Light * addLight(World & world, Light && light) {
-    world.lights.push_back(std::move(light));
+    world.lights.emplace_back(std::move(light));
     return &world.lights.back();
 }
 
@@ -104,7 +103,8 @@ void updateWorld(World & world, const float delta) {
 }
 
 void renderWorld(World & world, const Camera & camera) {
-    sendLightsToShader(toonShader, world.lights);
+    SM.sendLights(world.lights);
+    SM.setCamera(camera);
 
     for (auto & entity : world.entities) {
         if (entity != nullptr && 
@@ -116,8 +116,15 @@ void renderWorld(World & world, const Camera & camera) {
 }
 
 bool removeEntity(World &world, Entity* entity) {
-    if (entity == nullptr) return false;
-    world.entitiesToRemove.push_back(entity);
+
+    // Check if the entity is in the list
+    auto it = std::find_if(world.entities.begin(), world.entities.end(),
+            [entity](const std::unique_ptr<Entity>& e) {
+                return e.get() == entity;
+            });
+    if (it == world.entities.end()) return false;
+
+    world.entitiesToRemove.emplace_back(entity);
     return true;
 }
 

@@ -20,7 +20,7 @@ void Scene::Unload() {
 
 void Scene::RenderToTexture(const std::function<void()>& drawWorld) {
     BeginTextureMode(target);
-        ClearBackground(RAYWHITE);
+        ClearBackground(BLACK);
         BeginMode3D(camera);
             drawWorld(); // your world drawing goes here
         EndMode3D();

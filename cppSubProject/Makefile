@@ -1,6 +1,6 @@
 WINDOWS ?= 0
 
-CFLAGS ?= -std=c++17 -O0 -Wall -Wextra -Wno-unused-parameter
+CFLAGS ?= -std=c++17 -O0 -Wall -Wextra -Wno-unused-parameter -ffast-math
 
 ifeq ($(WINDOWS),1)
     CC = x86_64-w64-mingw32-g++

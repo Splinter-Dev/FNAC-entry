@@ -40,7 +40,7 @@ void Player::update(World & world, float delta) {
 void Player::render() const {
     MovingEntity::render();
     // Render the circle if in shadow mode
-    if (shadowModeActive && shadow != nullptr) {
+    if (shadowModeActive) {
         DrawCircle3D(getPosition(), getRadius(), (Vector3){1, 0, 0}, 90.0f, RED);
     }
 }
