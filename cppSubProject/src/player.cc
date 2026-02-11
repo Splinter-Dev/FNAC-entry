@@ -1,16 +1,19 @@
 #include <raylib.h>
 #include <raymath.h>
+#include <memory>
 #include "player.hh"
-#include "rlgl.h"
-#include "raylib.h"
-#include "rlgl.h"
 #include "movingEntity.hh"
 #include "world.hh"
-#include <memory>
+#include "shaderManager.hh"
 
 Player::Player(Model * model, Texture2D * texture, float scale) :
     MovingEntity(model, texture, scale)
-{}
+{
+    if (model != nullptr) {
+        TraceLog(LOG_ERROR, "Model is null");
+        model->materials[0].shader = SM.getToon();
+    }
+}
 
 void Player::update(World & world, float delta) {
     world.shadowMode = shadowModeActive;
@@ -90,9 +93,10 @@ float Player::getRadius() const {
 
 /* Shadow entity */
 
-PlayerShadow::PlayerShadow(Model * model, Texture2D * texture, float scale, Player * player) : 
-    player(player),
-    MovingEntity(model, texture, scale) {}
+PlayerShadow::PlayerShadow(Model * model, Texture2D * texture, 
+        float scale, Player * player) : 
+    MovingEntity(model, texture, scale),
+    player(player) {}
 
 void PlayerShadow::update(World & world, float delta) {
     if (world.shadowMode && player != nullptr) {

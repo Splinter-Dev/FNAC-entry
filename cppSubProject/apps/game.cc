@@ -47,7 +47,7 @@ int main(void)
     scene.camera.position = { 0.0f, 20.0f, 20.0f }; // farther back along diagonal
     scene.camera.target   = { 0.0f, 0.0f, 0.0f };
     scene.camera.up       = { 0.0f, 1.0f, 0.0f };   // keep Y as "up" on screen
-    scene.camera.fovy     = 25.0f; // can be slightly smaller now
+    scene.camera.fovy     = 25.0f;  // can be slightly smaller now
 
     Model * playerModel = RM.getModel("resources/guy.iqm");
     Texture2D * playerTexture = RM.getTexture("resources/guytex.png");
@@ -58,8 +58,6 @@ int main(void)
                 0.5f);
 
     addEntity(mainWorld, std::unique_ptr<Entity>(player));
-
-    player->model->materials[0].shader = SM.getToon();
     player->setPosition((Vector3){ 0.0f, 0.1f, 0.0f });
 
     Light light = pointLight((Vector3){ 0.0f, 10.0f, 0.0f }, RED, 1.0f, 10.0f);
@@ -137,7 +135,7 @@ int main(void)
                         DrawPlane(Vector3{ 0.0f, 0.0f, 0.0f }, Vector2{ 80.0f, 80.0f }, DARKPURPLE);
                     EndShaderMode();
                     renderWorld(mainWorld, scene.camera);
-                    // renderBoundingBoxes(mainWorld);
+                    renderBoundingBoxes(mainWorld);
                 });
 
             scene.DrawFullscreen();

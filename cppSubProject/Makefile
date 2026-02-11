@@ -1,6 +1,7 @@
 WINDOWS ?= 0
 
-CFLAGS ?= -std=c++17 -O0 -Wall -Wextra -Wno-unused-parameter -ffast-math
+CXXFLAGS ?= -std=c++17 -O0 -Wall -Wextra -ffast-math \
+		  -Wno-missing-field-initializers -Wno-unused-parameter
 
 SRC_DIR = ./src
 OBJ_DIR = ./obj
@@ -14,13 +15,13 @@ APP_DIR = ./apps
 LIB_TARGET = $(LIB_DIR)/program.a
 
 ifeq ($(WINDOWS),1)
-    CC = x86_64-w64-mingw32-g++
-    CFLAGS += -DPLATFORM_WINDOWS -DPLATFORM_DESKTOP -Wno-missing-field-initializers
+    CXX = x86_64-w64-mingw32-g++
+    CXXFLAGS += -DPLATFORM_WINDOWS -DPLATFORM_DESKTOP -Wno-missing-field-initializers
     INCDIR = ./inc ./windows/inc
     LIBS = ./windows/lib/libraylib.a -lopengl32 -lgdi32 -lwinmm -lshell32 -luser32 -lkernel32
     LDFLAGS = -static -static-libgcc -static-libstdc++ -Wl,-subsystem,console
 else
-    CC = g++
+    CXX = g++
     LIBS = -lraylib -lGL -lm -ldl -lrt
 	INCDIR = ./inc
 endif
@@ -43,11 +44,11 @@ $(BIN_DIR):
 
 # Build rule
 $(BIN_DIR)/%: $(APP_DIR)/%.cc | $(BIN_DIR) $(LIB_TARGET)
-	$(CC) $(CFLAGS) $(foreach dir,$(INCDIR),-I$(dir)) $< -o $@ $(LIB_TARGET) $(LDFLAGS) $(LIBS)
+	$(CXX) $(CXXFLAGS) $(foreach dir,$(INCDIR),-I$(dir)) $< -o $@ $(LIB_TARGET) $(LDFLAGS) $(LIBS)
 
 $(OBJ_DIR)/%.o: $(SRC_DIR)/%.cc
 	mkdir -p $(dir $@)
-	$(CC) -c $< -o $@ $(foreach dir,$(INCDIR),-I$(dir)) $(CFLAGS)
+	$(CXX) -c $< -o $@ $(foreach dir,$(INCDIR),-I$(dir)) $(CXXFLAGS)
 
 clean:
 	rm -rf $(OBJ_DIR) $(BIN_DIR) $(LIB_DIR)
