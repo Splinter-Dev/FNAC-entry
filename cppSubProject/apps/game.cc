@@ -116,6 +116,7 @@ int main(void)
             scene.camera.position.x, 
             scene.camera.position.y, 
             scene.camera.position.z };
+
         SetShaderValue(
                 SM.getToon(),
                 SM.getToon().locs[SHADER_LOC_VECTOR_VIEW], cameraPos, SHADER_UNIFORM_VEC3);
@@ -127,6 +128,8 @@ int main(void)
                 player->getPosition().y + 20.0f,
                 player->getPosition().z + 20.0f
             };
+
+        scene.Update();
 
         BeginDrawing();
 

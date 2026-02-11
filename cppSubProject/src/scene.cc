@@ -1,7 +1,6 @@
 #include "scene.hh"
 #include <cmath>
 
-
 void Scene::Init() {
     physicalWidth = GetScreenWidth();
     physicalHeight = GetScreenHeight();
@@ -31,10 +30,25 @@ void Scene::Draw(Rectangle viewport) {
     float scaleX = (float)physicalWidth / logicalWidth;
     float scaleY = (float)physicalHeight / logicalHeight;
 
-    Rectangle sourceRec = { 0, 0, (float)logicalWidth, -(float)logicalHeight }; // flip y
-    Vector2 origin = {0, 0};
+    float scale = (scaleX < scaleY) ? scaleX : scaleY;
 
-    DrawTexturePro(target.texture, sourceRec, viewport, origin, 0.0f, WHITE);
+    Rectangle dest = {
+        viewport.x,
+        viewport.y,
+        logicalWidth * scale,
+        logicalHeight * scale
+    };
+
+    Rectangle sourceRec = {
+        0.0f,
+        0.0f,
+        (float)target.texture.width,
+        -(float)target.texture.height
+    };
+
+    Vector2 origin = { 0.0f, 0.0f };
+
+    DrawTexturePro(target.texture, sourceRec, dest, origin, 0.0f, WHITE);
 }
 
 void Scene::DrawFullscreen() {
@@ -44,4 +58,9 @@ void Scene::DrawFullscreen() {
 
     Rectangle destRec = { 0, 0, logicalWidth * scale, logicalHeight * scale };
     Draw(destRec);
+}
+
+void Scene::Update() {
+    physicalWidth = GetScreenWidth();
+    physicalHeight = GetScreenHeight();
 }

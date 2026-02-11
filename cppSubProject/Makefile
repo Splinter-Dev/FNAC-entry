@@ -50,7 +50,7 @@ $(OBJ_DIR)/%.o: $(SRC_DIR)/%.cc
 	$(CC) -c $< -o $@ $(foreach dir,$(INCDIR),-I$(dir)) $(CFLAGS)
 
 clean:
-	rm -rf $(OBJ_DIR) $(BIN_DIR)
+	rm -rf $(OBJ_DIR) $(BIN_DIR) $(LIB_DIR)
 
 static: $(LIB_TARGET)
 

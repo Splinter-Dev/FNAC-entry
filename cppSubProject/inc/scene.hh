@@ -17,6 +17,9 @@ struct Scene {
 
     void Unload();
 
+    // Update sceen width / height and camera projection
+    void Update();
+
     // Render the scene into the render texture using a user-supplied lambda
     void RenderToTexture(const std::function<void()>& drawWorld);
 
