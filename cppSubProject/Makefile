@@ -8,20 +8,21 @@ BIN_DIR = ./bin
 LIB_DIR = ./lib
 APP_DIR = ./apps
 
+# Compile the program to a static library (.a)
+# and link it to the executables, also easier for testing and just
+# making multiple executables in general, like a game editor
+LIB_TARGET = $(LIB_DIR)/program.a
+
 ifeq ($(WINDOWS),1)
     CC = x86_64-w64-mingw32-g++
-    TARGET = $(BIN_DIR)/program.exe
     CFLAGS += -DPLATFORM_WINDOWS -DPLATFORM_DESKTOP -Wno-missing-field-initializers
     INCDIR = ./inc ./windows/inc
     LIBS = ./windows/lib/libraylib.a -lopengl32 -lgdi32 -lwinmm -lshell32 -luser32 -lkernel32
     LDFLAGS = -static -static-libgcc -static-libstdc++ -Wl,-subsystem,console
-	LIB_TARGET = $(LIB_DIR)/program.lib
 else
     CC = g++
-    TARGET = $(BIN_DIR)/program
     LIBS = -lraylib -lGL -lm -ldl -lrt
 	INCDIR = ./inc
-	LIB_TARGET = $(LIB_DIR)/program.a
 endif
 
 # main sources
@@ -47,9 +48,6 @@ $(BIN_DIR)/%: $(APP_DIR)/%.cc | $(BIN_DIR) $(LIB_TARGET)
 $(OBJ_DIR)/%.o: $(SRC_DIR)/%.cc
 	mkdir -p $(dir $@)
 	$(CC) -c $< -o $@ $(foreach dir,$(INCDIR),-I$(dir)) $(CFLAGS)
-
-$(TARGET): $(OBJS) $(BIN_DIR)
-	$(CC) $(OBJS) -o $@ $(LDFLAGS) $(LIBS)
 
 clean:
 	rm -rf $(OBJ_DIR) $(BIN_DIR)
