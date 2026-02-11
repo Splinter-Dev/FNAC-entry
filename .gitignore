@@ -2,4 +2,5 @@ cppSubProject/obj/
 cppSubProject/windows/
 cppSubProject/.cache/
 cppSubProject/bin/
+cppSubProject/lib/
 cppSubProject/compile_commands.json
