@@ -49,7 +49,7 @@ uniform sampler2D texture0;
 uniform vec4 colDiffuse;
 out vec4 finalColor;
 
-#define MAX_LIGHTS 4
+#define MAX_LIGHTS 10
 #define LIGHT_DIRECTIONAL 0
 #define LIGHT_POINT 1
 

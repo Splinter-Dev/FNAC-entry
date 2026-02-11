@@ -1,3 +1,4 @@
+#include "light.hh"
 #include "raylib.h"
 #include "raymath.h"
 #include "player.hh"
@@ -5,6 +6,7 @@
 #include "rlgl.h"
 #include "scene.hh"
 #include "shaderManager.hh"
+#include "resourceManager.hh"
 
 const float STEP = 1.0f / 500.0f;  // fixed timestep: 500 updates per second
                                    // independent of the framerate
@@ -33,11 +35,6 @@ int main(void)
 
     // Audio test
     InitAudioDevice();
-    Music m = LoadMusicStream("resources/menuideia.wav");
-
-    SetMasterVolume(0.5f);
-    SetMusicVolume(m, 0.5f);
-    SetMusicPitch(m, 0.9f);
 
     // Exit key
     SetExitKey(KEY_ESCAPE);
@@ -52,12 +49,12 @@ int main(void)
     scene.camera.up       = { 0.0f, 1.0f, 0.0f };   // keep Y as "up" on screen
     scene.camera.fovy     = 25.0f; // can be slightly smaller now
 
-    Model playerModel = LoadModel("resources/guy.iqm");
-    Texture2D playerTexture = LoadTexture("resources/guytex.png");
+    Model * playerModel = RM.getModel("resources/guy.iqm");
+    Texture2D * playerTexture = RM.getTexture("resources/guytex.png");
 
     Player * player = new Player(
-                &playerModel,
-                &playerTexture,
+                playerModel,
+                playerTexture,
                 0.5f);
 
     addEntity(mainWorld, std::unique_ptr<Entity>(player));
@@ -66,18 +63,15 @@ int main(void)
     player->setPosition((Vector3){ 0.0f, 0.1f, 0.0f });
 
     Light light = pointLight((Vector3){ 0.0f, 10.0f, 0.0f }, RED, 1.0f, 10.0f);
-    Light light2 = pointLight((Vector3){ 10.0f, 10.0f, 20.0f }, BLUE, 1.0f, 10.0f);
+    Light light2 = pointLight((Vector3){ 10.0f, 10.0f, 20.0f }, WHITE, 1.0f, 10.0f);
 
     addLight(mainWorld, std::move(light));
     addLight(mainWorld, std::move(light2));
 
     float accumulator = 0.0f;
 
-    PlayMusicStream(m);
-
     while (!WindowShouldClose())
     {
-        UpdateMusicStream(m);
 
         float dt = GetFrameTime();
 
@@ -115,7 +109,8 @@ int main(void)
         float cameraPos[3] = { 
             scene.camera.position.x, 
             scene.camera.position.y, 
-            scene.camera.position.z };
+            scene.camera.position.z 
+        };
 
         SetShaderValue(
                 SM.getToon(),
@@ -153,12 +148,6 @@ int main(void)
             DrawFPS(1830, 10);
         EndDrawing();
     }
-
-    UnloadModel(playerModel);
-    UnloadTexture(playerTexture);
-
-    StopMusicStream(m);
-    UnloadMusicStream(m);
 
     SM.unloadAll();
 

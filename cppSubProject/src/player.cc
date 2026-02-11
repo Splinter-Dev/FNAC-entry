@@ -45,6 +45,14 @@ void Player::render() const {
     }
 }
 
+void Player::setRadius(float radius) {
+    shadowRadius = radius;
+}
+
+void Player::addToRadius(float delta) {
+    shadowRadius += delta;
+}
+
 void Player::setDirection(Vector3 direction) {
     // If shadow mode is active, change the shadow entity's direction
     if (shadowModeActive && shadow != nullptr) {

@@ -23,6 +23,10 @@ struct World {
     /* Entities have to know if they are in shadow mode or not */
     bool shadowMode = false;
 
+    Color ambient = {
+        76, 76, 76, 255
+    };
+
     private:
 
     /* Entities are only added in the end of the update loop,

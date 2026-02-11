@@ -103,8 +103,10 @@ void updateWorld(World & world, const float delta) {
 }
 
 void renderWorld(World & world, const Camera & camera) {
-    SM.sendLights(world.lights);
+
+    SM.setAmbient(world.ambient);
     SM.setCamera(camera);
+    SM.sendLights(world.lights);
 
     for (auto & entity : world.entities) {
         if (entity != nullptr && 

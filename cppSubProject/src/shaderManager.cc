@@ -7,6 +7,8 @@ static Vector3 defaultViewPos = DEFAULT_VIEW_POS;
 
 #define LOG(msg) TraceLog(LOG_INFO, "[ShaderManager] " msg)
 
+#define MAX_LIGHTS 10
+
 // Send a single light to the shader
 static void sendLight(Shader &shader, int index, const Light &light) {
 
@@ -14,15 +16,16 @@ static void sendLight(Shader &shader, int index, const Light &light) {
     int enabled = light.enabled ? 1 : 0;
     int type = light.type;
 
-    Vector3 intensity = Vector3{ light.intensity, light.intensity, light.intensity };
-    Vector3 radius = Vector3{ light.radius, light.radius, light.radius };
+    Vector3 intensity = Vector3 { light.intensity, light.intensity, light.intensity };
+    Vector3 radius = Vector3 { light.radius, light.radius, light.radius };
 
     // Convert Color to float
     Vector4 colorF = { 
         light.color.r/255.0f, 
         light.color.g/255.0f, 
         light.color.b/255.0f, 
-        light.color.a/255.0f };
+        light.color.a/255.0f 
+    };
 
     /* Assume the shader has these uniforms */
     SetShaderValue(shader, GetShaderLocation(shader, (prefix + "enabled").c_str()), &enabled, SHADER_UNIFORM_INT);
@@ -54,7 +57,7 @@ Shader& ShaderManager::getToon() {
 
 Shader& ShaderManager::getBasic() {
     if (!basicLoaded) {
-        basic = LoadShader(nullptr, nullptr);   // default raylib shader
+        basic = LoadShader(nullptr, nullptr); // default raylib shader
         basicLoaded = true;
         LOG("Loaded basic shader");
     }
@@ -66,8 +69,16 @@ Shader ShaderManager::loadCustom(const std::string& vs, const std::string& fs) {
 }
 
 void ShaderManager::sendLights(const std::vector<Light>& lights) {
-    for (int i = 0; i < (int)lights.size(); i++) {
-        sendLight(toon, i, lights[i]);
+    int i = 0;
+
+    if (lights.size() > MAX_LIGHTS)
+        TraceLog(LOG_WARNING, "Too many lights, only sending %d", MAX_LIGHTS);
+
+    if (toonLoaded) {
+        for (i = 0; i < (int)lights.size() && i < MAX_LIGHTS; i++)
+            sendLight(toon, i, lights[i]);
+        for (; i < MAX_LIGHTS; i++)
+            sendLight(toon, i, Light{ false, LIGHT_DIRECTIONAL, Vector3{ 0.0f, 0.0f, 0.0f }, Vector3{ 0.0f, 0.0f, 0.0f }, WHITE, 0.0f, 0.0f });
     }
 }
 
@@ -79,6 +90,24 @@ void ShaderManager::setCamera(const Camera& camera) {
     if (basicLoaded) {
         // Notin to do ig
     }
+}
+
+void ShaderManager::setAmbient(const Color& color) {
+    Vector4 colorF = { 
+        color.r/255.0f, 
+        color.g/255.0f, 
+        color.b/255.0f, 
+        color.a/255.0f 
+    };
+    if (toonLoaded) {
+        SetShaderValue(toon, toonAmbientLoc, 
+            &colorF, SHADER_UNIFORM_VEC4);
+    }
+}
+
+void ShaderManager::initEmptyLights() {
+    std::vector<Light> lights;
+    sendLights(lights);
 }
 
 void ShaderManager::unloadAll() {

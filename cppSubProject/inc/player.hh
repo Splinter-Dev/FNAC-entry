@@ -12,13 +12,15 @@ public:
     void update(World & world, float delta) override;
     void render() const override;
 
-    void setShadowMode(bool shadowMode);
     void toggleShadowMode();
-    bool shadowMode() const;
-    float getRadius() const;
-
+    void setShadowMode(bool shadowMode);
+    void setRadius(float radius);
     void setVelocity(float velocity);
     void setDirection(Vector3 direction);
+    void addToRadius(float delta);
+
+    float getRadius() const;
+    bool shadowMode() const;
 
 private:
     // Shadow

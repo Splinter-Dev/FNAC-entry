@@ -26,11 +26,17 @@ public:
     // Send lights to loaded shaders
     void sendLights(const std::vector<Light>& lights);
     void setCamera(const Camera& camera);
+    void setAmbient(const Color& color);
 
     // Cleanup all shaders
     void unloadAll();
 
+    std::string toString() const;
+
 private:
+
+    void initEmptyLights();
+
     // Private constructor for singleton
     ShaderManager() = default;
     ~ShaderManager();
