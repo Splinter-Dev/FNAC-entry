@@ -1,7 +1,7 @@
 #include "light.hh"
 #include "raylib.h"
 #include "raymath.h"
-#include "player.hh"
+#include "entities/player.hh"
 #include "world.hh"
 #include "rlgl.h"
 #include "scene.hh"
@@ -40,14 +40,7 @@ int main(void)
     SetExitKey(KEY_ESCAPE);
 
     Scene scene;
-
-    scene.Init(); // Logical resolution is 1920x1080
-
-    scene.camera.projection = CAMERA_ORTHOGRAPHIC;
-    scene.camera.position = { 0.0f, 20.0f, 20.0f }; // farther back along diagonal
-    scene.camera.target   = { 0.0f, 0.0f, 0.0f };
-    scene.camera.up       = { 0.0f, 1.0f, 0.0f };   // keep Y as "up" on screen
-    scene.camera.fovy     = 25.0f;  // can be slightly smaller now
+    scene.init();   // Logical resolution is 1920x1080
 
     Model * playerModel = RM.getModel("resources/guy.iqm");
     Texture2D * playerTexture = RM.getTexture("resources/guytex.png");
@@ -57,20 +50,19 @@ int main(void)
                 playerTexture,
                 0.5f);
 
-    addEntity(mainWorld, std::unique_ptr<Entity>(player));
+    addEntityToWorld(mainWorld, std::unique_ptr<Entity>(player));
     player->setPosition((Vector3){ 0.0f, 0.1f, 0.0f });
 
-    Light light = pointLight((Vector3){ 0.0f, 10.0f, 0.0f }, RED, 1.0f, 10.0f);
-    Light light2 = pointLight((Vector3){ 10.0f, 10.0f, 20.0f }, WHITE, 1.0f, 10.0f);
+    Light light = pointLight((Vector3) {0.0f, 10.0f, 0.0f}, RED, 1.0f, 10.0f);
+    Light light2 = pointLight((Vector3) {10.0f, 10.0f, 20.0f}, WHITE, 1.0f, 10.0f);
 
-    addLight(mainWorld, std::move(light));
-    addLight(mainWorld, std::move(light2));
+    addLightToWorld(mainWorld, std::move(light));
+    addLightToWorld(mainWorld, std::move(light2));
 
     float accumulator = 0.0f;
 
     while (!WindowShouldClose())
     {
-
         float dt = GetFrameTime();
 
         accumulator += dt;
@@ -103,17 +95,7 @@ int main(void)
             player->setVelocity(10.0f);
         }
 
-        // Update the shader with the camera view vector (points towards { 0.0f, 0.0f, 0.0f })
-        float cameraPos[3] = { 
-            scene.camera.position.x, 
-            scene.camera.position.y, 
-            scene.camera.position.z 
-        };
-
-        SetShaderValue(
-                SM.getToon(),
-                SM.getToon().locs[SHADER_LOC_VECTOR_VIEW], cameraPos, SHADER_UNIFORM_VEC3);
-
+        // Follow the player
         scene.camera.target = player->getPosition();
         scene.camera.position =
             (Vector3){
@@ -122,7 +104,8 @@ int main(void)
                 player->getPosition().z + 20.0f
             };
 
-        scene.Update();
+        // Update physical with / height
+        scene.update();
 
         BeginDrawing();
 
@@ -130,20 +113,21 @@ int main(void)
 
             /* Everything inside this lambda will be rendered to a texture,
              * then loaded to the physical screen */
-            scene.RenderToTexture([&]() {
+            scene.renderToTexture([&]() {
                     BeginShaderMode(SM.getToon());
                         DrawPlane(Vector3{ 0.0f, 0.0f, 0.0f }, Vector2{ 80.0f, 80.0f }, DARKPURPLE);
                     EndShaderMode();
                     renderWorld(mainWorld, scene.camera);
-                    renderBoundingBoxes(mainWorld);
+                    // renderBoundingBoxes(mainWorld);
                 });
 
-            scene.DrawFullscreen();
+            scene.drawFullscreen(); // Draw the texture to the screen
 
             DrawText(HELP, 10, 10, 20, 
                     (Color){ 255, 255, 255, 150 });
 
             DrawFPS(1830, 10);
+
         EndDrawing();
     }
 

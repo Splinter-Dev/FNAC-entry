@@ -23,9 +23,8 @@ struct World {
     /* Entities have to know if they are in shadow mode or not */
     bool shadowMode = false;
 
-    Color ambient = {
-        76, 76, 76, 255
-    };
+    /* ambient 0.3f, 0.3f, 0.3f, 1.0f */
+    Color ambient = { 76, 76, 76, 255 };
 
     private:
 
@@ -33,6 +32,7 @@ struct World {
      * these add / romove the entities from entities / lights */
     void addEntity(std::unique_ptr<Entity> entity);
     bool removeEntity(Entity * entity);
+    void resolveCollisions();
 };
 
 /* Abstract base class for entities */
@@ -52,13 +52,13 @@ void updateWorld(World & world, const float delta);
 void renderWorld(World & world, const Camera & camera);
 void renderBoundingBoxes(World & world);
 
-void addEntity(World & world, std::unique_ptr<Entity> entity);
-bool removeEntity(World & world, Entity * entity);
-void clearEntities(World & world);
+void addEntityToWorld(World & world, std::unique_ptr<Entity> entity);
+bool removeEntityInWorld(World & world, Entity * entity);
+void clearWorldEntities(World & world);
 
-Light * addLight(World & world, Light && light);
-bool removeLight(World & world, Light * light);
-void clearLights(World & world);
+Light * addLightToWorld(World & world, Light && light);
+bool removeLightInWorld(World & world, Light * light);
+void clearWorldLights(World & world);
 
 /* Remove all entities and lights */
 void clearWorld(World & world);

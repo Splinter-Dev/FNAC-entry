@@ -9,16 +9,17 @@
 
 class ResourceManager {
 public:
+
     static ResourceManager& getInstance() {
         static ResourceManager instance;
         return instance;
     }
 
-    Texture2D*      getTexture(std::string_view path);
-    Sound*          getSound(std::string_view path);
-    Music*          getMusic(std::string_view path);
-    Font*           getFont(std::string_view path);
-    Model*          getModel(std::string_view path);
+    Texture2D*  getTexture(std::string_view path);
+    Sound*      getSound(std::string_view path);
+    Music*      getMusic(std::string_view path);
+    Font*       getFont(std::string_view path);
+    Model*      getModel(std::string_view path);
 
     void unloadAll();
     void unloadTextures();

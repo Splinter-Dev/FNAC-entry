@@ -1,8 +1,8 @@
 #include <raylib.h>
 #include <raymath.h>
 #include <memory>
-#include "player.hh"
-#include "movingEntity.hh"
+#include "entities/player.hh"
+#include "entities/movingEntity.hh"
 #include "world.hh"
 #include "shaderManager.hh"
 
@@ -10,30 +10,27 @@ Player::Player(Model * model, Texture2D * texture, float scale) :
     MovingEntity(model, texture, scale)
 {
     if (model != nullptr) {
-        TraceLog(LOG_ERROR, "Model is null");
+        /* The entities can use shadermanager for rendering */
         model->materials[0].shader = SM.getToon();
     }
 }
 
 void Player::update(World & world, float delta) {
     world.shadowMode = shadowModeActive;
-
     if (shadowModeActive) {
         if (shadow == nullptr) {
-            // Insert shadow entity into the world
+            // Insern shadow entity into the world
             shadow = std::make_unique<PlayerShadow>(
                     model, texture, getScale(), this).release();
             shadow->setPosition(getPosition());
             shadow->setVelocity(getVelocity());
-            addEntity(world, std::unique_ptr<Entity>(shadow));
+            addEntityToWorld(world, std::unique_ptr<Entity>(shadow));
         }
     } else {
         if (shadow != nullptr) {
             // Remove shadow entity from the world
-            if (removeEntity(world, shadow)) {
+            if (removeEntityInWorld(world, shadow)) {
                 shadow = nullptr;
-            } else {
-                TraceLog(LOG_ERROR, "Failed to remove shadow entity");
             }
         }
         MovingEntity::update(world, delta);
@@ -92,11 +89,11 @@ float Player::getRadius() const {
 }
 
 /* Shadow entity */
-
 PlayerShadow::PlayerShadow(Model * model, Texture2D * texture, 
         float scale, Player * player) : 
     MovingEntity(model, texture, scale),
-    player(player) {}
+    player(player) {
+    }
 
 void PlayerShadow::update(World & world, float delta) {
     if (world.shadowMode && player != nullptr) {

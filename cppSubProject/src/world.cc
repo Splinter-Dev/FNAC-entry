@@ -22,12 +22,11 @@ void World::addEntity(std::unique_ptr<Entity> entity) {
     entities.emplace_back(std::move(entity));
 }
 
-void addEntity(World & world, std::unique_ptr<Entity> entity) {
+void addEntityToWorld(World & world, std::unique_ptr<Entity> entity) {
     world.entitiesToAdd.emplace_back(std::move(entity));
 }
 
 bool World::removeEntity(Entity * entity) {
-
     // Check if entity is in the list
     auto it = std::find_if(entities.begin(), entities.end(),
             [entity](const std::unique_ptr<Entity>& e) {
@@ -59,23 +58,23 @@ void World::applyPendingChanges() {
     entitiesToRemove.clear();
 }
 
-Light * addLight(World & world, Light && light) {
+Light * addLightToWorld(World & world, Light && light) {
     world.lights.emplace_back(std::move(light));
     return &world.lights.back();
 }
 
-void clearLights(World & world) {
+void clearWorldLights(World & world) {
     world.lights.clear();
 }
 
 void clearWorld(World & world) {
-    clearEntities(world);
-    clearLights(world);
+    clearWorldEntities(world);
+    clearWorldLights(world);
     world.entitiesToAdd.clear();
     world.entitiesToRemove.clear();
 }
 
-bool removeLight(World &world, Light *light) {
+bool removeLightInWorld(World &world, Light *light) {
     auto &vec = world.lights;
 
     // Find the pointer in the vector
@@ -117,7 +116,7 @@ void renderWorld(World & world, const Camera & camera) {
     }
 }
 
-bool removeEntity(World &world, Entity* entity) {
+bool removeEntityInWorld(World &world, Entity* entity) {
 
     // Check if the entity is in the list
     auto it = std::find_if(world.entities.begin(), world.entities.end(),
@@ -130,7 +129,7 @@ bool removeEntity(World &world, Entity* entity) {
     return true;
 }
 
-void clearEntities(World & world) {
+void clearWorldEntities(World & world) {
     world.entities.clear();
 }
 

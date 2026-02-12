@@ -1,11 +1,11 @@
 #include <raylib.h>
 #include <raymath.h>
-#include "rlgl.h"
-#include "raymath.h"
-#include "raylib.h"
+#include <rlgl.h>
+#include <raymath.h>
+#include <raylib.h>
 #include "rlgl.h"
 #include "transform.hpp"
-#include "movingEntity.hh"
+#include "entities/movingEntity.hh"
 
 MovingEntity::MovingEntity(Model * model, Texture2D * texture, float scale) :
     scale(scale)
@@ -25,7 +25,9 @@ MovingEntity::MovingEntity(Model * model, Texture2D * texture, float scale) :
     bb = GetModelBoundingBox(*model);
 }
 
-Matrix MovingEntity::getMatrix(Vector3 position, Vector3 direction, float scale) const {
+Matrix MovingEntity::getMatrix(Vector3 position, 
+                               Vector3 direction, 
+                               float scale) const {
     float rotY = 0.0f;
 
     if (Vector3Length(direction) > 0.0001f)

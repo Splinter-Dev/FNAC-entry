@@ -26,6 +26,7 @@ public:
 
     Model * model;
     Texture2D * texture;
+
 private:
 
     Matrix getMatrix(Vector3 position, Vector3 direction, float scale) const;

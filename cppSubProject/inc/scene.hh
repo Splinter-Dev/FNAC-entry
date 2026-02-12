@@ -13,19 +13,28 @@ struct Scene {
     Camera3D camera = {0};
     RenderTexture2D target;
 
-    void Init();
-
-    void Unload();
+    // Initialize the scene, this is needed to get the
+    // physical resolution of the screen
+    void init();
 
     // Update sceen width / height and camera projection
-    void Update();
+    void update();
 
     // Render the scene into the render texture using a user-supplied lambda
-    void RenderToTexture(const std::function<void()>& drawWorld);
+    void renderToTexture(const std::function<void()>& drawWorld);
 
     // Draw the render texture scaled to the physical screen (or any rectangle)
-    void Draw(Rectangle viewport);
+    void draw(Rectangle viewport);
+
+    // Draw the render texture scaled to the physical screen (or any rectangle)
+    void drawScaled(Rectangle viewport);
 
     // Convenience: scale to fullscreen with aspect ratio
-    void DrawFullscreen();
+    void drawFullscreen();
+
+    void unload();
+
+    private:
+
+    void DrawTextureInViewport(Rectangle viewport, float scaleX, float scaleY);
 };

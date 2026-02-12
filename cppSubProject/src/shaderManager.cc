@@ -27,6 +27,14 @@ static void sendLight(Shader &shader, int index, const Light &light) {
         light.color.a/255.0f 
     };
 
+    int enabledLoc = GetShaderLocation(shader, (prefix + "enabled").c_str());
+    int typeLoc = GetShaderLocation(shader, (prefix + "type").c_str());
+    int positionLoc = GetShaderLocation(shader, (prefix + "position").c_str());
+    int targetLoc = GetShaderLocation(shader, (prefix + "target").c_str());
+    int colorLoc = GetShaderLocation(shader, (prefix + "color").c_str());
+    int intensityLoc = GetShaderLocation(shader, (prefix + "intensity").c_str());
+    int radiusLoc = GetShaderLocation(shader, (prefix + "radius").c_str());
+
     /* Assume the shader has these uniforms */
     SetShaderValue(shader, GetShaderLocation(shader, (prefix + "enabled").c_str()), &enabled, SHADER_UNIFORM_INT);
     SetShaderValue(shader, GetShaderLocation(shader, (prefix + "type").c_str()), &type, SHADER_UNIFORM_INT);
@@ -35,6 +43,15 @@ static void sendLight(Shader &shader, int index, const Light &light) {
     SetShaderValue(shader, GetShaderLocation(shader, (prefix + "color").c_str()), &colorF, SHADER_UNIFORM_VEC4);
     SetShaderValue(shader, GetShaderLocation(shader, (prefix + "intensity").c_str()), &intensity, SHADER_UNIFORM_VEC3);
     SetShaderValue(shader, GetShaderLocation(shader, (prefix + "radius").c_str()), &radius, SHADER_UNIFORM_VEC3);
+
+    // Log if any of the uniforms were not found
+    if (enabledLoc == -1)   LOG("Could not find enabled uniform");
+    if (typeLoc == -1)      LOG("Could not find type uniform");
+    if (positionLoc == -1)  LOG("Could not find position uniform");
+    if (targetLoc == -1)    LOG("Could not find target uniform");
+    if (colorLoc == -1)     LOG("Could not find color uniform");
+    if (intensityLoc == -1) LOG("Could not find intensity uniform");
+    if (radiusLoc == -1)    LOG("Could not find radius uniform");
 }
 
 ShaderManager& ShaderManager::instance() {

@@ -1,23 +1,24 @@
 #include "scene.hh"
 #include <cmath>
 
-void Scene::Init() {
+void Scene::init() {
+
     physicalWidth = GetScreenWidth();
     physicalHeight = GetScreenHeight();
     target = LoadRenderTexture(logicalWidth, logicalHeight);
 
-    camera.position = { 0.0f, 10.0f, 10.0f };
-    camera.target   = { 0.0f, 0.0f, 0.0f };
-    camera.up       = { 0.0f, 1.0f, 0.0f };
-    camera.fovy     = 45.0f;
-    camera.projection = CAMERA_PERSPECTIVE;
+    camera.projection = CAMERA_ORTHOGRAPHIC;
+    camera.position   = { 0.0f, 20.0f, 20.0f };
+    camera.target     = { 0.0f, 0.0f, 0.0f };
+    camera.up         = { 0.0f, 1.0f, 0.0f };
+    camera.fovy       = 25.0f;
 }
 
-void Scene::Unload() {
+void Scene::unload() {
     UnloadRenderTexture(target);
 }
 
-void Scene::RenderToTexture(const std::function<void()>& drawWorld) {
+void Scene::renderToTexture(const std::function<void()>& drawWorld) {
     BeginTextureMode(target);
         ClearBackground(BLACK);
         BeginMode3D(camera);
@@ -26,24 +27,43 @@ void Scene::RenderToTexture(const std::function<void()>& drawWorld) {
     EndTextureMode();
 }
 
-void Scene::Draw(Rectangle viewport) {
-    float scaleX = (float)physicalWidth / logicalWidth;
-    float scaleY = (float)physicalHeight / logicalHeight;
+void Scene::draw(Rectangle viewport) {
 
+    // Scale based on viewport, not physical screen
+    float scaleX = viewport.width  / logicalWidth;
+    float scaleY = viewport.height / logicalHeight;
     float scale = (scaleX < scaleY) ? scaleX : scaleY;
 
+    DrawTextureInViewport(viewport, scale, scale);
+}
+
+void Scene::drawScaled(Rectangle viewport) {
+
+    // Scale based on viewport, not physical screen
+    float scaleX = viewport.width  / logicalWidth;
+    float scaleY = viewport.height / logicalHeight;
+
+    DrawTextureInViewport(viewport, scaleX, scaleY);
+}
+
+void Scene::DrawTextureInViewport(Rectangle viewport, float scaleX, float scaleY) {
+
+    float scaledWidth  = logicalWidth  * scaleX;
+    float scaledHeight = logicalHeight * scaleY;
+
+    // Center inside the viewport (letterboxing)
     Rectangle dest = {
-        viewport.x,
-        viewport.y,
-        logicalWidth * scale,
-        logicalHeight * scale
+        viewport.x + (viewport.width  - scaledWidth)  * 0.5f,
+        viewport.y + (viewport.height - scaledHeight) * 0.5f,
+        scaledWidth,
+        scaledHeight
     };
 
     Rectangle sourceRec = {
         0.0f,
         0.0f,
         (float)target.texture.width,
-        -(float)target.texture.height
+        -(float)target.texture.height  // keep flipped for RenderTexture
     };
 
     Vector2 origin = { 0.0f, 0.0f };
@@ -51,16 +71,18 @@ void Scene::Draw(Rectangle viewport) {
     DrawTexturePro(target.texture, sourceRec, dest, origin, 0.0f, WHITE);
 }
 
-void Scene::DrawFullscreen() {
+void Scene::drawFullscreen() {
     float scaleX = (float)physicalWidth / logicalWidth;
     float scaleY = (float)physicalHeight / logicalHeight;
     float scale = fminf(scaleX, scaleY);
-
-    Rectangle destRec = { 0, 0, logicalWidth * scale, logicalHeight * scale };
-    Draw(destRec);
+    Rectangle destRec = { 
+        0, 0, 
+        logicalWidth * scale, 
+        logicalHeight * scale};
+    draw(destRec);
 }
 
-void Scene::Update() {
+void Scene::update() {
     physicalWidth = GetScreenWidth();
     physicalHeight = GetScreenHeight();
 }
