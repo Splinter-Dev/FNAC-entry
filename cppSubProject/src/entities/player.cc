@@ -5,18 +5,22 @@
 #include "entities/movingEntity.hh"
 #include "world.hh"
 #include "shaderManager.hh"
+#include "collision.hh"
 
 Player::Player(Model * model, Texture2D * texture, float scale) :
     MovingEntity(model, texture, scale)
 {
     if (model != nullptr) {
-        /* The entities can use shadermanager for rendering */
+        /* The entities can use shadermanager for rendering purposes */
         model->materials[0].shader = SM.getToon();
     }
+    setHitboxRadius(0.7f);
 }
 
 void Player::update(World & world, float delta) {
+
     world.shadowMode = shadowModeActive;
+
     if (shadowModeActive) {
         if (shadow == nullptr) {
             // Insern shadow entity into the world
@@ -35,6 +39,18 @@ void Player::update(World & world, float delta) {
         }
         MovingEntity::update(world, delta);
     }
+
+    if (light == nullptr) {
+        Vector3 pos= getPosition();
+        pos.y += 4.0f;
+        Light l = pointLight( pos, WHITE, 0.5f, 5.0f);
+        light = addLightToWorld(world, std::move(l));
+    } else {
+        Vector3 pos= getPosition();
+        pos.y += 4.0f;
+        light->position = pos;
+    }
+
 }
 
 void Player::render() const {
@@ -93,9 +109,12 @@ PlayerShadow::PlayerShadow(Model * model, Texture2D * texture,
         float scale, Player * player) : 
     MovingEntity(model, texture, scale),
     player(player) {
+        setHitboxRadius(0.7f);
+        setJumpHeight(6.0f);
     }
 
 void PlayerShadow::update(World & world, float delta) {
+
     if (world.shadowMode && player != nullptr) {
 
         Vector3 pos = getPosition();
@@ -114,8 +133,32 @@ void PlayerShadow::update(World & world, float delta) {
                     player->getPosition().z
                     },
                     rad)) {
-            // Rollback
-            setPosition(pos);
+            // Rollback x and y
+            setPosition(
+                    (Vector3){
+                        pos.x,
+                        this->position.y,
+                        pos.z
+                    });
         }
     }
+}
+
+void Player::jump() {
+    if (shadowModeActive && shadow != nullptr) {
+        shadow->jump();
+    } else{
+        MovingEntity::jump();
+    }
+}
+
+void Player::resolveCollision(const CollisionInfo& info) {
+    // If the player is in shadow mode, ignore collisions
+    if (shadowModeActive || info.entity == shadow) return;   // Ignore the player
+    MovingEntity::resolveCollision(info);
+}
+
+void PlayerShadow::resolveCollision(const CollisionInfo& info) {
+    if (info.entity == player) return;   // Ignore the player
+    MovingEntity::resolveCollision(info);
 }

@@ -1,7 +1,11 @@
 #include "world.hh"
 #include "shaderManager.hh"
 #include <algorithm>
+#include <raymath.h>
 #include <vector>
+#include <raylib.h>
+#include <algorithm>
+#include "collision.hh"
 
 static bool isVisible(const BoundingBox& box, const Camera& cam, float screenWidth, float screenHeight) {
     // For top-down, ignore Y (height) and just check X,Z bounds
@@ -90,7 +94,9 @@ bool removeLightInWorld(World &world, Light *light) {
 }
 
 void updateWorld(World & world, const float delta) {
+
     world.applyPendingChanges();
+    resolveCollisions(world);
 
     for (auto & entity : world.entities) {
         // Some entities might add / romove other entities 
@@ -135,8 +141,46 @@ void clearWorldEntities(World & world) {
 
 /* For testing purposes */
 void renderBoundingBoxes(World & world) {
-    for (auto & entity : world.entities) {
+    for (auto & entity : world.entities)
         DrawBoundingBox(entity->getBoundingBox(), RED);
+}
+
+void renderHitBoxes(World & world) {
+    for (auto & entity : world.entities) {
+        if (entity->getHitBox().has_value()) {
+            if (std::holds_alternative<AABB>(entity->getHitBox().value()))
+                DrawBoundingBox(std::get<AABB>(entity->getHitBox().value()), RED);
+            else if (std::holds_alternative<Cylinder>(entity->getHitBox().value())) {
+                Cylinder cylinder = std::get<Cylinder>(entity->getHitBox().value());
+                DrawCylinderWires(
+                    cylinder.center,
+                    cylinder.radius,
+                    cylinder.radius,
+                    cylinder.height,
+                    10,
+                    RED);
+            }
+        }
+    }
+}
+
+void resolveCollisions(World & world) {
+    // Simple collision resolution, should probably add
+    // a collision grid to speed up the process
+    for (auto & entity : world.entities) {
+        for (auto & other : world.entities) {
+            if (entity != other && 
+                entity->getHitBox().has_value() && 
+                other->getHitBox().has_value()) {
+
+                CollisionInfo info = GetCollision(*entity, *other);
+
+                if (info.penetration > 0.0f) {
+                    info.entity = other.get();
+                    entity->resolveCollision(info);
+                }
+            }
+        }
     }
 }
 

@@ -34,15 +34,17 @@ static void sendLight(Shader &shader, int index, const Light &light) {
     int colorLoc = GetShaderLocation(shader, (prefix + "color").c_str());
     int intensityLoc = GetShaderLocation(shader, (prefix + "intensity").c_str());
     int radiusLoc = GetShaderLocation(shader, (prefix + "radius").c_str());
+    int specularLoc = GetShaderLocation(shader, (prefix + "specular").c_str());
 
     /* Assume the shader has these uniforms */
-    SetShaderValue(shader, GetShaderLocation(shader, (prefix + "enabled").c_str()), &enabled, SHADER_UNIFORM_INT);
-    SetShaderValue(shader, GetShaderLocation(shader, (prefix + "type").c_str()), &type, SHADER_UNIFORM_INT);
-    SetShaderValue(shader, GetShaderLocation(shader, (prefix + "position").c_str()), &light.position, SHADER_UNIFORM_VEC3);
-    SetShaderValue(shader, GetShaderLocation(shader, (prefix + "target").c_str()), &light.target, SHADER_UNIFORM_VEC3);
-    SetShaderValue(shader, GetShaderLocation(shader, (prefix + "color").c_str()), &colorF, SHADER_UNIFORM_VEC4);
-    SetShaderValue(shader, GetShaderLocation(shader, (prefix + "intensity").c_str()), &intensity, SHADER_UNIFORM_VEC3);
-    SetShaderValue(shader, GetShaderLocation(shader, (prefix + "radius").c_str()), &radius, SHADER_UNIFORM_VEC3);
+    SetShaderValue(shader, enabledLoc, &enabled, SHADER_UNIFORM_INT);
+    SetShaderValue(shader, typeLoc, &type, SHADER_UNIFORM_INT);
+    SetShaderValue(shader, positionLoc, &light.position, SHADER_UNIFORM_VEC3);
+    SetShaderValue(shader, targetLoc, &light.target, SHADER_UNIFORM_VEC3);
+    SetShaderValue(shader, colorLoc, &colorF, SHADER_UNIFORM_VEC4);
+    SetShaderValue(shader, intensityLoc, &intensity, SHADER_UNIFORM_VEC3);
+    SetShaderValue(shader, radiusLoc, &radius, SHADER_UNIFORM_VEC3);
+    SetShaderValue(shader, specularLoc, &light.specular, SHADER_UNIFORM_FLOAT);
 
     // Log if any of the uniforms were not found
     if (enabledLoc == -1)   LOG("Could not find enabled uniform");
@@ -52,6 +54,7 @@ static void sendLight(Shader &shader, int index, const Light &light) {
     if (colorLoc == -1)     LOG("Could not find color uniform");
     if (intensityLoc == -1) LOG("Could not find intensity uniform");
     if (radiusLoc == -1)    LOG("Could not find radius uniform");
+    if (specularLoc == -1)  LOG("Could not find specular uniform");
 }
 
 ShaderManager& ShaderManager::instance() {

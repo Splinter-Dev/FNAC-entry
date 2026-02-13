@@ -1,6 +1,6 @@
 WINDOWS ?= 0
 
-CXXFLAGS ?= -std=c++17 -O0 -Wall -Wextra -ffast-math \
+CXXFLAGS ?= -std=c++17 -Os -Wall -Wextra -ffast-math \
 		  -Wno-missing-field-initializers -Wno-unused-parameter
 
 SRC_DIR = ./src
@@ -12,7 +12,7 @@ APP_DIR = ./apps
 # Compile the program to a static library (.a)
 # and link it to the executables, also easier for testing and just
 # making multiple executables in general, like a game editor
-LIB_TARGET = $(LIB_DIR)/program.a
+LIB_TARGET = $(LIB_DIR)/game.a
 
 ifeq ($(WINDOWS),1)
     CXX = x86_64-w64-mingw32-g++

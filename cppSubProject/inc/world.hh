@@ -3,6 +3,8 @@
 #include "raylib.h"
 #include <memory>
 #include <vector>
+#include <optional>
+#include <variant>
 #include "light.hh"
 
 struct Entity;
@@ -32,8 +34,18 @@ struct World {
      * these add / romove the entities from entities / lights */
     void addEntity(std::unique_ptr<Entity> entity);
     bool removeEntity(Entity * entity);
-    void resolveCollisions();
 };
+
+struct Cylinder {
+    Vector3 center;
+    float radius;
+    float height;
+};
+
+#define HitBox std::variant<BoundingBox, Cylinder>
+#define AABB BoundingBox
+
+struct CollisionInfo;
 
 /* Abstract base class for entities */
 struct Entity {
@@ -45,12 +57,21 @@ struct Entity {
 
     /* Entities that are not visible should return a bounding box that is
      * completely outside the visible area. */
-    virtual BoundingBox getBoundingBox() const = 0;
+    virtual AABB getBoundingBox() const = 0;
+
+    /* Collisions */
+    virtual std::optional<HitBox> getHitBox() const = 0;
+    virtual void resolveCollision(const CollisionInfo& info) = 0;
+
+    /* Used in editor */
+    virtual Vector3 getPosition() const = 0;
+    virtual void setPosition(Vector3 position) = 0;
 };
 
 void updateWorld(World & world, const float delta);
 void renderWorld(World & world, const Camera & camera);
 void renderBoundingBoxes(World & world);
+void renderHitBoxes(World & world);
 
 void addEntityToWorld(World & world, std::unique_ptr<Entity> entity);
 bool removeEntityInWorld(World & world, Entity * entity);
@@ -59,6 +80,8 @@ void clearWorldEntities(World & world);
 Light * addLightToWorld(World & world, Light && light);
 bool removeLightInWorld(World & world, Light * light);
 void clearWorldLights(World & world);
+
+void resolveCollisions(World & world);
 
 /* Remove all entities and lights */
 void clearWorld(World & world);

@@ -15,7 +15,10 @@ struct Light {
     Color color;
     float intensity;
     float radius;        // for point lights
+    float specular;
 };
 
 Light directionalLight(Vector3 position, Vector3 target, Color color, float intensity);
 Light pointLight(Vector3 position, Color color, float intensity, float radius);
+Light directionalLight(Vector3 position, Vector3 target, Color color, float intensity, float specular);
+Light pointLight(Vector3 position, Color color, float intensity, float radius, float specular);

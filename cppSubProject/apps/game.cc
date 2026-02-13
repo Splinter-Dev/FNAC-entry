@@ -2,6 +2,7 @@
 #include "raylib.h"
 #include "raymath.h"
 #include "entities/player.hh"
+#include "entities/cube.hh"
 #include "world.hh"
 #include "rlgl.h"
 #include "scene.hh"
@@ -18,10 +19,6 @@ World mainWorld;
              "Press A/D to move left/right\n" \
              "Press SHIFT to increase velocity\n" \
              "Press ESC to exit"
-
-void updateGame(World & world, float delta) {
-    updateWorld(world, delta);
-}
 
 int main(void)
 {
@@ -50,8 +47,18 @@ int main(void)
                 playerTexture,
                 0.5f);
 
+
+    Cube * cube = new Cube(
+                (Vector3){ 10.0f, 2.5f, 0.0f },
+                2.5f,
+                2.5f);
+
+    player->setGravity(30.0f);
+    player->setJumpHeight(5.0f);
+    player->setPosition((Vector3){ 0.0f, 5.0f, 0.0f });
+
     addEntityToWorld(mainWorld, std::unique_ptr<Entity>(player));
-    player->setPosition((Vector3){ 0.0f, 0.1f, 0.0f });
+    addEntityToWorld(mainWorld, std::unique_ptr<Entity>(cube));
 
     Light light = pointLight((Vector3) {0.0f, 10.0f, 0.0f}, RED, 1.0f, 10.0f);
     Light light2 = pointLight((Vector3) {10.0f, 10.0f, 20.0f}, WHITE, 1.0f, 10.0f);
@@ -69,7 +76,7 @@ int main(void)
 
         // Process fixed-size updates
         while (accumulator >= STEP) {
-            updateGame(mainWorld, STEP);
+            updateWorld(mainWorld, STEP);
             accumulator -= STEP;
         }
 
@@ -85,7 +92,7 @@ int main(void)
         player->setDirection(dir);
 
         // Enable shadow mode
-        if (IsKeyPressed(KEY_SPACE)) {
+        if (IsKeyPressed(KEY_J)) {
             player->toggleShadowMode();
         }
         
@@ -93,6 +100,10 @@ int main(void)
             player->setVelocity(20.0f);
         } else {
             player->setVelocity(10.0f);
+        }
+
+        if (IsKeyDown(KEY_SPACE)) {
+            player->jump();
         }
 
         // Follow the player
@@ -119,6 +130,7 @@ int main(void)
                     EndShaderMode();
                     renderWorld(mainWorld, scene.camera);
                     // renderBoundingBoxes(mainWorld);
+                    renderHitBoxes(mainWorld);
                 });
 
             scene.drawFullscreen(); // Draw the texture to the screen

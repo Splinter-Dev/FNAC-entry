@@ -61,6 +61,7 @@ struct Light {
     vec4 color;     // ignored for pure-color toon shading
     vec3 intensity; // scalar intensity in .r channel
     vec3 radius;    // only used for point lights
+    float specular;
 };
 
 uniform Light lights[MAX_LIGHTS];
@@ -121,12 +122,12 @@ void main()
             diffuseTerm += baseColor * diffuseIntensity * lightCol;
 
 
-            // Specular highlights (white)
+            // jpecular highlights (white)
             if (NdotL > 0.0)
             {
                 float spec = pow(max(dot(viewDir, reflect(-lightDir, normal)), 0.0), 26.0);
                 spec = (spec > 0.5) ? 1.0 : 0.0;
-                specularTerm += vec3(spec * 0.1 * attenuation); // add brightness equally to all channels
+                specularTerm += vec3(spec * lights[i].specular * attenuation); // add brightness equally to all channels
             }
         }
     }
