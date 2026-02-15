@@ -7,22 +7,22 @@
 #include "transform.hpp"
 #include "entities/movingEntity.hh"
 #include "collision.hh"
+#include "resourceManager.hh"
 
-MovingEntity::MovingEntity(Model * model, Texture2D * texture, float scale) :
+// Always define this shit
+// AutoRegister<MovingEntity> MovingEntity::reg;
+MovingEntity::MovingEntity(
+        const std::string & modelPath, 
+        const std::string & texturePath, 
+        float scale) :
+    modelPath(modelPath),
+    texturePath(texturePath),
     scale(scale)
 {
     position = Vector3 { 0.0f, 0.0f, 0.0f };
     direction = Vector3 { 0.0f, 0.0f, 0.0f };
     velocity = 10.0f;
-
-    this->model = model;
-    this->texture = texture;
-
-    for (int i = 0; i < model->materialCount; i++)
-        SetMaterialTexture(&model->materials[i], MATERIAL_MAP_DIFFUSE, *texture);
-
-    /* Calculate Bounding Box for the model */
-    bb = GetModelBoundingBox(*model);
+    setup();
 }
 
 Matrix MovingEntity::getMatrix(Vector3 position, 
@@ -47,6 +47,10 @@ void MovingEntity::drawEntity(Matrix transform) const {
 }
 
 void MovingEntity::update(World & world, float delta) {
+
+    if (model == nullptr) {
+        setup();
+    }
 
     grounded = false;
 
@@ -73,6 +77,7 @@ void MovingEntity::update(World & world, float delta) {
 }
 
 void MovingEntity::render() const {
+    if (model == nullptr) return;
     Vector3 dir = Vector3Equals(direction, {0.0f, 0.0f, 0.0f}) ? lastDirection : direction;
     Matrix transform = getMatrix(position, dir, scale);
     drawEntity(transform);
@@ -213,5 +218,47 @@ float MovingEntity::getJumpHeight() const
 
 bool MovingEntity::isGrounded() const
 { return grounded; }
+
+uint32_t MovingEntity::getId() const {
+    return TYPE_ID;
+}
+
+std::vector<Attribute> MovingEntity::getAttributes() const {
+    return {
+        MakeAttribute("modelPath", &MovingEntity::modelPath, AttributeType::String),
+        MakeAttribute("texturePath", &MovingEntity::texturePath, AttributeType::String),
+        MakeAttribute("scale", &MovingEntity::scale, AttributeType::Float),
+        MakeAttribute("position", &MovingEntity::position, AttributeType::Vec3),
+        MakeAttribute("direction", &MovingEntity::direction, AttributeType::Vec3),
+        MakeAttribute("velocity", &MovingEntity::velocity, AttributeType::Float),
+        MakeAttribute("hitboxRadius", &MovingEntity::hitboxRadius, AttributeType::Float),
+        MakeAttribute("verticalVelocity", &MovingEntity::verticalVelocity, AttributeType::Float),
+        MakeAttribute("gravity", &MovingEntity::gravity, AttributeType::Float),
+        MakeAttribute("jumpHeight", &MovingEntity::jumpHeight, AttributeType::Float),
+    };
+}
+
+void MovingEntity::setup() {
+    if (model != nullptr) return;
+
+    this->model = RM.getModel(modelPath);
+
+    if (!IsModelValid(*model)) {
+        TraceLog(LOG_ERROR, "Failed to load model: %s", modelPath.c_str());
+        return;
+    }
+
+    bb = GetModelBoundingBox(*model);
+
+    this->texture = RM.getTexture(texturePath);
+
+    if (!IsTextureValid(*texture)) {
+        TraceLog(LOG_ERROR, "Failed to load texture: %s", texturePath.c_str());
+        return;
+    }
+
+    for (int i = 0; i < model->materialCount; i++)
+        SetMaterialTexture(&model->materials[i], MATERIAL_MAP_DIFFUSE, *texture);
+}
 
 MovingEntity::~MovingEntity() {}

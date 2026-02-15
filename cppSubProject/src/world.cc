@@ -22,12 +22,56 @@ static bool isVisible(const BoundingBox& box, const Camera& cam, float screenWid
     return !(maxX < camLeft || minX > camRight || maxZ < camTop || minZ > camBottom);
 }
 
+static bool isVisibleCircle(const Vector3& center,
+                            float radius,
+                            const Camera& cam,
+                            float screenWidth,
+                            float screenHeight)
+{
+    // Camera rectangle in world space
+    float camLeft   = cam.position.x - screenWidth  / 2.0f;
+    float camRight  = cam.position.x + screenWidth  / 2.0f;
+    float camTop    = cam.position.z - screenHeight / 2.0f;
+    float camBottom = cam.position.z + screenHeight / 2.0f;
+
+    // Circle bounds in XZ plane
+    float minX = center.x - radius;
+    float maxX = center.x + radius;
+    float minZ = center.z - radius;
+    float maxZ = center.z + radius;
+
+    // Outside test (same idea as AABB)
+    return !(maxX < camLeft  ||
+             minX > camRight ||
+             maxZ < camTop   ||
+             minZ > camBottom);
+}
+
+static std::vector<Light> filterLightsByVisible(
+    const std::vector<Light>& lights,
+    const Camera& cam,
+    float screenWidth,
+    float screenHeight)
+{
+    std::vector<Light> result;
+    result.reserve(lights.size()); // pre-allocate to avoid repeated reallocations
+
+    for (const auto& l : lights) {
+        if (isVisibleCircle(l.position, l.radius, cam, screenWidth, screenHeight)) {
+            result.push_back(l); // copy the visible light
+        }
+    }
+
+    return result;
+}
+
 void World::addEntity(std::unique_ptr<Entity> entity) {
     entities.emplace_back(std::move(entity));
 }
 
-void addEntityToWorld(World & world, std::unique_ptr<Entity> entity) {
+void addEntityToWorld(World & world, std::unique_ptr<Entity> entity, bool immediately) {
     world.entitiesToAdd.emplace_back(std::move(entity));
+    if (immediately) world.applyPendingChanges();
 }
 
 bool World::removeEntity(Entity * entity) {
@@ -106,12 +150,18 @@ void updateWorld(World & world, const float delta) {
         }
     }
 }
-
 void renderWorld(World & world, const Camera & camera) {
 
     SM.setAmbient(world.ambient);
     SM.setCamera(camera);
-    SM.sendLights(world.lights);
+
+    std::vector<Light> visibleLights = filterLightsByVisible(
+            world.lights,
+            camera,
+            GetScreenWidth(),
+            GetScreenHeight());
+
+    SM.sendLights(visibleLights);
 
     for (auto & entity : world.entities) {
         if (entity != nullptr && 
@@ -122,8 +172,7 @@ void renderWorld(World & world, const Camera & camera) {
     }
 }
 
-bool removeEntityInWorld(World &world, Entity* entity) {
-
+bool removeEntityInWorld(World &world, Entity* entity, bool immediately) {
     // Check if the entity is in the list
     auto it = std::find_if(world.entities.begin(), world.entities.end(),
             [entity](const std::unique_ptr<Entity>& e) {
@@ -132,6 +181,8 @@ bool removeEntityInWorld(World &world, Entity* entity) {
     if (it == world.entities.end()) return false;
 
     world.entitiesToRemove.emplace_back(entity);
+
+    if (immediately) world.applyPendingChanges();
     return true;
 }
 

@@ -3,6 +3,7 @@
 #include "entities/cube.hh"
 #include "shaderManager.hh"
 
+// AutoRegister<Cube> Cube::reg;
 Cube::Cube(Vector3 position, float height, float width) :
     position(position),
     height(height),
@@ -10,7 +11,7 @@ Cube::Cube(Vector3 position, float height, float width) :
 {}
 
 void Cube::update(World & world, float delta) {
-    // Do nothing
+    // Do notn
 }
 
 void Cube::render() const {
@@ -35,7 +36,15 @@ std::optional<HitBox> Cube::getHitBox() const {
 }
 
 void Cube::resolveCollision(const CollisionInfo& info) {
-    // Do nothing
+    // Do notn
+}
+
+std::vector<Attribute> Cube::getAttributes() const {
+    return {
+        MakeAttribute("height", &Cube::height, AttributeType::Float),
+        MakeAttribute("width", &Cube::width, AttributeType::Float),
+        MakeAttribute("position", &Cube::position, AttributeType::Vec3),
+    };
 }
 
 void Cube::setPosition(Vector3 position) {
@@ -44,4 +53,8 @@ void Cube::setPosition(Vector3 position) {
 
 Vector3 Cube::getPosition() const {
     return position;
+}
+
+uint32_t Cube::getId() const {
+    return TYPE_ID;
 }

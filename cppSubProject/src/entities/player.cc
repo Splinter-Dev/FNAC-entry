@@ -7,8 +7,11 @@
 #include "shaderManager.hh"
 #include "collision.hh"
 
-Player::Player(Model * model, Texture2D * texture, float scale) :
-    MovingEntity(model, texture, scale)
+Player::Player(
+        const std::string & modelPath, 
+        const std::string & texturePath, 
+        float scale) :
+    MovingEntity(modelPath, texturePath, scale)
 {
     if (model != nullptr) {
         /* The entities can use shadermanager for rendering purposes */
@@ -23,12 +26,12 @@ void Player::update(World & world, float delta) {
 
     if (shadowModeActive) {
         if (shadow == nullptr) {
+            auto newShadow = std::make_unique<PlayerShadow>(modelPath, texturePath, scale, this);
             // Insern shadow entity into the world
-            shadow = std::make_unique<PlayerShadow>(
-                    model, texture, getScale(), this).release();
+            shadow = newShadow.get();
             shadow->setPosition(getPosition());
             shadow->setVelocity(getVelocity());
-            addEntityToWorld(world, std::unique_ptr<Entity>(shadow));
+            addEntityToWorld(world, std::move(newShadow));
         }
     } else {
         if (shadow != nullptr) {
@@ -105,9 +108,12 @@ float Player::getRadius() const {
 }
 
 /* Shadow entity */
-PlayerShadow::PlayerShadow(Model * model, Texture2D * texture, 
-        float scale, Player * player) : 
-    MovingEntity(model, texture, scale),
+PlayerShadow::PlayerShadow(
+        const std::string & modelPath, 
+        const std::string & texturePath, 
+        float scale, 
+        Player * player) :
+    MovingEntity(modelPath, texturePath, scale),
     player(player) {
         setHitboxRadius(0.7f);
         setJumpHeight(6.0f);

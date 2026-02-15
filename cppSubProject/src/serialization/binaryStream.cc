@@ -1,8 +1,7 @@
-#include "binaryStream.hh"
+#include "serialization/binaryStream.hh"
 
 #include <cstdint> // uint8_t, uint16_t, uint32_t
 #include <cstring> // memcpy
-
 bool writeU8(std::ostream& out, uint8_t v)
 {
     char c = static_cast<char>(v);
@@ -110,4 +109,18 @@ bool readString(std::istream& in, std::string& s)
     return static_cast<bool>(
         in.read(&s[0], static_cast<std::streamsize>(length))
     );
+}
+
+bool writeBool(std::ostream& out, bool v)
+{
+    uint8_t b = v ? 1 : 0;
+    return writeU8(out, b);
+}
+
+bool readBool(std::istream& in, bool& v)
+{
+    uint8_t b;
+    if (!readU8(in, b)) return false;
+    v = (b != 0);
+    return true;
 }

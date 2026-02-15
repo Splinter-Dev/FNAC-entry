@@ -7,7 +7,9 @@ class PlayerShadow;
 
 class Player : public MovingEntity {
 public:
-    Player(Model * model, Texture2D * texture, float scale = 0.5f);
+    Player(const std::string & modelPath, 
+           const std::string & texturePath,
+           float scale = 0.5f);
 
     void update(World & world, float delta) override;
     void render() const override;
@@ -35,12 +37,10 @@ private:
 
 class PlayerShadow : public MovingEntity {
 public:
-    PlayerShadow(
-            Model * model, 
-            Texture2D * texture, 
-            float scale = 0.5f,
-            Player * player = nullptr
-            );
+    PlayerShadow(const std::string & modelPath, 
+            const std::string & texturePath, 
+            float scale = 0.5f, 
+            Player * player = nullptr);
 
     void update(World & world, float delta) override;
     void resolveCollision(const CollisionInfo& info) override;

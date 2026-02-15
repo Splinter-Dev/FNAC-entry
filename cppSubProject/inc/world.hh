@@ -5,7 +5,9 @@
 #include <vector>
 #include <optional>
 #include <variant>
+#include <cstdint>
 #include "light.hh"
+#include "attributes.hh"
 
 struct Entity;
 
@@ -29,7 +31,6 @@ struct World {
     Color ambient = { 76, 76, 76, 255 };
 
     private:
-
     /* Entities are only added in the end of the update loop,
      * these add / romove the entities from entities / lights */
     void addEntity(std::unique_ptr<Entity> entity);
@@ -59,13 +60,18 @@ struct Entity {
      * completely outside the visible area. */
     virtual AABB getBoundingBox() const = 0;
 
-    /* Collisions */
+    /* Collisions, you can just do nothing regarding these two */
     virtual std::optional<HitBox> getHitBox() const = 0;
     virtual void resolveCollision(const CollisionInfo& info) = 0;
 
     /* Used in editor */
     virtual Vector3 getPosition() const = 0;
     virtual void setPosition(Vector3 position) = 0;
+
+    /* Every entity type must implement these two, these are
+     * used for serialization too */
+    virtual uint32_t getId() const = 0;
+    virtual std::vector<Attribute> getAttributes() const = 0;
 };
 
 void updateWorld(World & world, const float delta);
@@ -73,8 +79,8 @@ void renderWorld(World & world, const Camera & camera);
 void renderBoundingBoxes(World & world);
 void renderHitBoxes(World & world);
 
-void addEntityToWorld(World & world, std::unique_ptr<Entity> entity);
-bool removeEntityInWorld(World & world, Entity * entity);
+void addEntityToWorld(World & world, std::unique_ptr<Entity> entity, bool immediately = false);
+bool removeEntityInWorld(World & world, Entity * entity, bool immediately = false);
 void clearWorldEntities(World & world);
 
 Light * addLightToWorld(World & world, Light && light);

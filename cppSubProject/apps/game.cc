@@ -1,4 +1,3 @@
-#include "light.hh"
 #include "raylib.h"
 #include "raymath.h"
 #include "entities/player.hh"
@@ -7,7 +6,6 @@
 #include "rlgl.h"
 #include "scene.hh"
 #include "shaderManager.hh"
-#include "resourceManager.hh"
 
 const float STEP = 1.0f / 500.0f;  // fixed timestep: 500 updates per second
                                    // independent of the framerate
@@ -22,13 +20,15 @@ World mainWorld;
 
 int main(void)
 {
+    RegisterAllEntities();
+
     // Antialiasing
     SetConfigFlags(FLAG_MSAA_4X_HINT);
 
     // Vsync
     SetConfigFlags(FLAG_VSYNC_HINT);
 
-    InitWindow(1920, 1080, "Top-Down Cube Example");
+    InitWindow(1500, 800, "Aplicacao");
 
     // Audio test
     InitAudioDevice();
@@ -39,32 +39,18 @@ int main(void)
     Scene scene;
     scene.init();   // Logical resolution is 1920x1080
 
-    Model * playerModel = RM.getModel("resources/guy.iqm");
-    Texture2D * playerTexture = RM.getTexture("resources/guytex.png");
+    auto newPlayer = std::make_unique<Player>(
+            "resources/guy.iqm",
+            "resources/guytex.png",
+            0.5f);
 
-    Player * player = new Player(
-                playerModel,
-                playerTexture,
-                0.5f);
-
-
-    Cube * cube = new Cube(
-                (Vector3){ 10.0f, 2.5f, 0.0f },
-                2.5f,
-                2.5f);
-
+    Player * player = newPlayer.get();
     player->setGravity(30.0f);
     player->setJumpHeight(5.0f);
     player->setPosition((Vector3){ 0.0f, 5.0f, 0.0f });
 
-    addEntityToWorld(mainWorld, std::unique_ptr<Entity>(player));
-    addEntityToWorld(mainWorld, std::unique_ptr<Entity>(cube));
-
-    Light light = pointLight((Vector3) {0.0f, 10.0f, 0.0f}, RED, 1.0f, 10.0f);
-    Light light2 = pointLight((Vector3) {10.0f, 10.0f, 20.0f}, WHITE, 1.0f, 10.0f);
-
-    addLightToWorld(mainWorld, std::move(light));
-    addLightToWorld(mainWorld, std::move(light2));
+    // DeserializeWorld(mainWorld, "resources/world.bin");
+    addEntityToWorld(mainWorld, std::move(newPlayer));
 
     float accumulator = 0.0f;
 
@@ -143,9 +129,8 @@ int main(void)
         EndDrawing();
     }
 
-    SM.unloadAll();
-
     CloseWindow();
+    TraceLog(LOG_INFO, "\n\n%s", EntityFactory::toString().c_str());
 
     return 0;
 }
